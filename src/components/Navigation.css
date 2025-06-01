@@ -1,0 +1,137 @@
+.navigation {
+  background-color: var(--white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-dark);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.nav-logo svg {
+  color: var(--primary-pink);
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  padding: 8px;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-small);
+  text-decoration: none;
+  color: var(--text-dark);
+  font-weight: 500;
+  transition: all 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.nav-item:hover {
+  background-color: var(--primary-pink);
+  color: var(--text-dark);
+}
+
+.nav-item-active {
+  background-color: var(--primary-pink);
+  color: var(--text-dark);
+}
+
+.nav-item-signout {
+  margin-left: 16px;
+  color: #D32F2F;
+}
+
+.nav-item-signout:hover {
+  background-color: #FFE5E5;
+}
+
+.mobile-menu-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--white);
+    flex-direction: column;
+    padding: 80px 20px 20px;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  .nav-menu-open {
+    right: 0;
+  }
+
+  .nav-item {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+
+  .nav-item-signout {
+    margin-left: 0;
+    margin-top: auto;
+  }
+
+  .mobile-menu-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-logo span {
+    display: none;
+  }
+}

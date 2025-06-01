@@ -1,0 +1,178 @@
+.profile-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-container h1 {
+  color: #333;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.profile-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e8d5e8;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #d4a5d4;
+}
+
+.disabled-input {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.save-button {
+  background-color: #9fd3c7;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover {
+  background-color: #8ac3b7;
+}
+
+.save-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.family-members {
+  margin-bottom: 2rem;
+}
+
+.family-members h3 {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.member-list {
+  list-style: none;
+  padding: 0;
+}
+
+.member-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #fdf4f4;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.no-members {
+  color: #999;
+  font-style: italic;
+}
+
+.invite-section h3 {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.invite-form {
+  display: flex;
+  gap: 1rem;
+}
+
+.invite-form input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e8d5e8;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.invite-form button {
+  background-color: #f5c2c7;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.invite-form button:hover {
+  background-color: #f0a3ab;
+}
+
+.sign-out-button {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sign-out-button:hover {
+  background-color: #ff5252;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 1rem;
+  }
+  
+  .profile-section {
+    padding: 1.5rem;
+  }
+  
+  .invite-form {
+    flex-direction: column;
+  }
+}

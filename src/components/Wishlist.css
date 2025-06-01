@@ -1,0 +1,416 @@
+.wishlist-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wishlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.wishlist-header h1 {
+  color: #333;
+  font-size: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.add-button {
+  background-color: #f5c2c7;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.add-button:hover {
+  background-color: #f0a3ab;
+}
+
+.share-button {
+  background-color: #b5d6f5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.share-button:hover {
+  background-color: #9cc6e8;
+}
+
+.wishlist-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.summary-card h3 {
+  font-size: 2rem;
+  color: #333;
+  margin: 0;
+}
+
+.summary-card p {
+  color: #666;
+  margin: 0;
+}
+
+.wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.wishlist-item {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+}
+
+.wishlist-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wishlist-item.purchased {
+  opacity: 0.7;
+  background-color: #f9f9f9;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.item-header h3 {
+  color: #333;
+  font-size: 1.2rem;
+  margin: 0;
+  flex: 1;
+}
+
+.price {
+  color: #f5c2c7;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.item-description {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.item-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #b5d6f5;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.item-link:hover {
+  color: #9cc6e8;
+  text-decoration: underline;
+}
+
+.item-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+  flex: 1;
+}
+
+.added-by,
+.purchased-by {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.purchased-by {
+  color: #4CAF50;
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.purchase-button {
+  flex: 1;
+  background-color: #9fd3c7;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.purchase-button:hover {
+  background-color: #8ac3b7;
+}
+
+.purchase-button.unpurchase {
+  background-color: #ffa726;
+}
+
+.purchase-button.unpurchase:hover {
+  background-color: #ff9800;
+}
+
+.delete-button {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+  background-color: #ff5252;
+}
+
+.no-items {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.no-items p {
+  color: #999;
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e8d5e8;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-button,
+.close-button {
+  background-color: #e0e0e0;
+  color: #666;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cancel-button:hover,
+.close-button:hover {
+  background-color: #d0d0d0;
+}
+
+.save-button {
+  background-color: #f5c2c7;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover {
+  background-color: #f0a3ab;
+}
+
+/* Share modal specific styles */
+.share-modal p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.share-link-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e8d5e8;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #f9f9f9;
+}
+
+.copy-button {
+  background-color: #b5d6f5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.copy-button:hover {
+  background-color: #9cc6e8;
+}
+
+.share-note {
+  font-size: 0.9rem;
+  color: #999;
+  font-style: italic;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .wishlist-container {
+    padding: 1rem;
+  }
+  
+  .wishlist-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+  }
+  
+  .wishlist-summary {
+    flex-direction: column;
+  }
+  
+  .wishlist-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .share-link-container {
+    flex-direction: column;
+  }
+  
+  .share-link-input {
+    font-size: 0.8rem;
+  }
+}
