@@ -1,131 +1,175 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Baby, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import './Login.css';
 
-const Login = () => {
+function Login() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [message, setMessage] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
     setLoading(true);
+    setMessage('');
+    setDebugInfo('');
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
+        // First, try to sign up
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
         });
-        if (error) throw error;
-        setSuccess('Check your email for the confirmation link!');
+
+        if (signUpError) {
+          console.error('SignUp Error:', signUpError);
+          setDebugInfo(`SignUp Error: ${JSON.stringify(signUpError, null, 2)}`);
+          throw signUpError;
+        }
+
+        console.log('SignUp Success:', signUpData);
+        
+        // Check if user was created
+        if (signUpData.user) {
+          // Try to manually create profile if needed
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: signUpData.user.id,
+              email: signUpData.user.email,
+              family_id: crypto.randomUUID()
+            });
+          
+          if (profileError) {
+            console.error('Profile Creation Error:', profileError);
+            setDebugInfo(prev => prev + `\nProfile Error: ${JSON.stringify(profileError, null, 2)}`);
+            // Don't throw here - the trigger might have already created it
+          }
+        }
+
+        setMessage('Sign up successful! Please check your email for verification link.');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // Sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
         });
-        if (error) throw error;
+
+        if (error) {
+          console.error('SignIn Error:', error);
+          setDebugInfo(`SignIn Error: ${JSON.stringify(error, null, 2)}`);
+          throw error;
+        }
+
+        console.log('SignIn Success:', data);
+        setMessage('Sign in successful!');
       }
     } catch (error) {
-      setError(error.message);
+      setMessage(error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Test database connection
+  const testConnection = async () => {
+    try {
+      // Test 1: Check if we can connect to Supabase
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session check:', { session, sessionError });
+      
+      // Test 2: Try to select from profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .limit(1);
+      
+      console.log('Profiles table check:', { profiles, profilesError });
+      
+      // Test 3: Check if tables exist
+      const { data: tables, error: tablesError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(0);
+      
+      setDebugInfo(`
+Connection Test Results:
+- Supabase URL: ${process.env.REACT_APP_SUPABASE_URL}
+- Auth Session: ${sessionError ? 'Error: ' + sessionError.message : 'OK'}
+- Profiles Table: ${profilesError ? 'Error: ' + profilesError.message : 'OK'}
+- Tables Check: ${tablesError ? 'Error: ' + tablesError.message : 'OK'}
+      `);
+    } catch (err) {
+      setDebugInfo(`Connection test failed: ${err.message}`);
+    }
+  };
+
   return (
     <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <Baby className="login-icon" size={48} />
-          <h1>Simply Pregnancy</h1>
-          <p>Track your pregnancy journey together</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="login-form">
+      <div className="login-box">
+        <h1>Simply Pregnancy</h1>
+        <h2>{isSignUp ? 'Create Account' : 'Sign In'}</h2>
+        
+        <form onSubmit={handleAuth}>
           <div className="form-group">
-            <label className="form-label">
-              <Mail size={20} />
-              Email
-            </label>
             <input
               type="email"
-              className="form-input"
-              placeholder="your@email.com"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-
           <div className="form-group">
-            <label className="form-label">
-              <Lock size={20} />
-              Password
-            </label>
             <input
               type="password"
-              className="form-input"
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
             />
           </div>
-
-          {error && <div className="alert alert-error">{error}</div>}
-          {success && <div className="alert alert-success">{success}</div>}
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={loading}
-          >
-            {loading ? (
-              'Loading...'
-            ) : isSignUp ? (
-              <>
-                <UserPlus size={20} />
-                Create Account
-              </>
-            ) : (
-              <>
-                <LogIn size={20} />
-                Sign In
-              </>
-            )}
+          <button type="submit" disabled={loading}>
+            {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
-
-        <div className="login-footer">
-          <p>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setSuccess(null);
-              }}
-            >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
-            </button>
-          </p>
+        
+        <p className="toggle-auth">
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+          <button 
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setMessage('');
+              setDebugInfo('');
+            }}
+            className="link-button"
+          >
+            {isSignUp ? 'Sign In' : 'Sign Up'}
+          </button>
+        </p>
+        
+        {message && (
+          <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
+            {message}
+          </div>
+        )}
+        
+        <div className="debug-section">
+          <button type="button" onClick={testConnection} className="test-button">
+            Test Database Connection
+          </button>
+          {debugInfo && (
+            <pre className="debug-info">{debugInfo}</pre>
+          )}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Login;
