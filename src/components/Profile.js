@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { User, Calendar, Users, Mail, Save } from 'lucide-react';
+import { User, Calendar, Users, Mail, Save, Copy, Check } from 'lucide-react';
 import './Profile.css';
 
 function Profile() {
@@ -9,6 +9,9 @@ function Profile() {
   const [saving, setSaving] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [familyCode, setFamilyCode] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     due_date: ''
@@ -35,6 +38,11 @@ function Profile() {
         full_name: data.full_name || '',
         due_date: data.due_date || ''
       });
+      
+      // Generate a shareable family code (first 8 chars of family_id)
+      if (data.family_id) {
+        setFamilyCode(data.family_id.substring(0, 8).toUpperCase());
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -90,17 +98,50 @@ function Profile() {
     }
   }
 
-  async function inviteFamilyMember() {
-    if (!inviteEmail) return;
-    
-    try {
-      // Here you would implement the invite logic
-      // For now, we'll just show a placeholder
-      alert(`Invite functionality will be implemented. Would invite: ${inviteEmail}`);
-      setInviteEmail('');
-    } catch (error) {
-      console.error('Error inviting family member:', error);
+  async function joinFamily() {
+    if (!joinCode || joinCode.length !== 8) {
+      alert('Please enter a valid 8-character family code');
+      return;
     }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Find the family with this code
+      const { data: familyData, error: searchError } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .ilike('family_id', `${joinCode.toLowerCase()}%`)
+        .limit(1)
+        .single();
+
+      if (searchError || !familyData) {
+        alert('Invalid family code. Please check and try again.');
+        return;
+      }
+
+      // Update current user's family_id
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ family_id: familyData.family_id })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      alert('Successfully joined the family!');
+      setJoinCode('');
+      fetchProfile();
+      fetchFamilyMembers();
+    } catch (error) {
+      console.error('Error joining family:', error);
+      alert('Error joining family');
+    }
+  }
+
+  function copyFamilyCode() {
+    navigator.clipboard.writeText(familyCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleSignOut() {
@@ -159,6 +200,35 @@ function Profile() {
       <div className="profile-section">
         <h2><Users size={20} /> Family Account</h2>
         
+        <div className="family-code-section">
+          <h3>Your Family Code</h3>
+          <p>Share this code with your partner or family members so they can join your pregnancy journey!</p>
+          <div className="code-display">
+            <span className="family-code">{familyCode}</span>
+            <button onClick={copyFamilyCode} className="copy-button">
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        <div className="join-family-section">
+          <h3>Join a Family</h3>
+          <p>Have a family code? Enter it here to join an existing family account.</p>
+          <div className="join-form">
+            <input
+              type="text"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="Enter 8-character code"
+              maxLength={8}
+            />
+            <button onClick={joinFamily}>
+              Join Family
+            </button>
+          </div>
+        </div>
+        
         <div className="family-members">
           <h3>Family Members</h3>
           {familyMembers.length > 0 ? (
@@ -167,27 +237,13 @@ function Profile() {
                 <li key={member.id}>
                   <Mail size={16} />
                   {member.full_name || member.email}
+                  {member.role && <span className="role-badge">{member.role}</span>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="no-members">No family members yet</p>
+            <p className="no-members">No family members yet. Share your family code to invite them!</p>
           )}
-        </div>
-        
-        <div className="invite-section">
-          <h3>Invite Family Member</h3>
-          <div className="invite-form">
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="Enter email address"
-            />
-            <button onClick={inviteFamilyMember}>
-              Send Invite
-            </button>
-          </div>
         </div>
       </div>
       
