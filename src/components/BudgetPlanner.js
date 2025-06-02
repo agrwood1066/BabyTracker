@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { DollarSign, Plus, Star, Check, Edit2, Trash2, Download } from 'lucide-react';
+import { Plus, Star, Check, Edit2, Trash2, Download } from 'lucide-react';
 import { CSVLink } from 'react-csv';
 import './BudgetPlanner.css';
 

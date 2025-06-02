@@ -90,7 +90,7 @@ function Login() {
       console.log('Profiles table check:', { profiles, profilesError });
       
       // Test 3: Check if tables exist
-      const { data: tables, error: tablesError } = await supabase
+      const { data: tables, error: tablesError } = await supabase // eslint-disable-line no-unused-vars
         .from('profiles')
         .select('id')
         .limit(0);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { User, Calendar, Users, Mail, Save, Copy, Check } from 'lucide-react';
+import { User, Users, Mail, Save, Copy, Check } from 'lucide-react';
 import './Profile.css';
 
 function Profile() {
@@ -8,7 +8,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
-  const [inviteEmail, setInviteEmail] = useState('');
+  // const [inviteEmail, setInviteEmail] = useState(''); // Removed unused variables
   const [familyCode, setFamilyCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);

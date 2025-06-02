@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Heart, Plus, User, Users, Baby, Star, Trash2 } from 'lucide-react';
+import { Heart, Plus, User, Users, Star, Trash2 } from 'lucide-react';
 import './BabyNames.css';
 
 function BabyNames() {

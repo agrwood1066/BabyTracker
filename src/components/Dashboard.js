@@ -19,7 +19,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchData() {
     try {
