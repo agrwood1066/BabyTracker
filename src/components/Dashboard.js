@@ -152,15 +152,7 @@ function Dashboard() {
             <h3>Budget</h3>
             <p className="stat-value">£{stats.budget.spent.toFixed(2)}</p>
             <p className="stat-label">of £{stats.budget.total.toFixed(2)} spent</p>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ 
-                  width: `${stats.budget.total > 0 ? (stats.budget.spent / stats.budget.total) * 100 : 0}%`,
-                  backgroundColor: '#9fd3c7'
-                }}
-              />
-            </div>
+
           </div>
         </Link>
 
@@ -172,15 +164,7 @@ function Dashboard() {
             <h3>Baby Items</h3>
             <p className="stat-value">{stats.babyItems.purchased}</p>
             <p className="stat-label">of {stats.babyItems.total} purchased</p>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ 
-                  width: `${stats.babyItems.total > 0 ? (stats.babyItems.purchased / stats.babyItems.total) * 100 : 0}%`,
-                  backgroundColor: '#b5d6f5'
-                }}
-              />
-            </div>
+
           </div>
         </Link>
 
@@ -192,15 +176,7 @@ function Dashboard() {
             <h3>Wishlist</h3>
             <p className="stat-value">{stats.wishlist.purchased}</p>
             <p className="stat-label">of {stats.wishlist.total} received</p>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ 
-                  width: `${stats.wishlist.total > 0 ? (stats.wishlist.purchased / stats.wishlist.total) * 100 : 0}%`,
-                  backgroundColor: '#f5c2c7'
-                }}
-              />
-            </div>
+
           </div>
         </Link>
 
@@ -212,15 +188,7 @@ function Dashboard() {
             <h3>Hospital Bag</h3>
             <p className="stat-value">{stats.hospitalBag.packed}</p>
             <p className="stat-label">of {stats.hospitalBag.total} packed</p>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ 
-                  width: `${stats.hospitalBag.total > 0 ? (stats.hospitalBag.packed / stats.hospitalBag.total) * 100 : 0}%`,
-                  backgroundColor: '#ffd6a5'
-                }}
-              />
-            </div>
+
           </div>
         </Link>
 

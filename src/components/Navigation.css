@@ -94,13 +94,15 @@
     right: -100%;
     width: 280px;
     height: 100vh;
-    background-color: var(--white);
+    background-color: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
     flex-direction: column;
     padding: 80px 20px 20px;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
     transition: right 0.3s ease;
     gap: 4px;
     align-items: stretch;
+    z-index: 1001;
   }
 
   .nav-menu-open {

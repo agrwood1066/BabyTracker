@@ -17,7 +17,9 @@ function BudgetPlanner() {
     category_id: '',
     price: '',
     price_source: '',
-    starred: false
+    starred: false,
+    notes: '',
+    links: [{ url: '', price: '', source: '' }]
   });
   const [newCategory, setNewCategory] = useState({
     name: '',
@@ -132,6 +134,7 @@ function BudgetPlanner() {
         .insert({
           ...newItem,
           price: parseFloat(newItem.price) || 0,
+          links: JSON.stringify(newItem.links.filter(link => link.url)), // Only save links with URLs
           family_id: profile.family_id,
           added_by: user.id
         });
@@ -143,7 +146,9 @@ function BudgetPlanner() {
         category_id: '',
         price: '',
         price_source: '',
-        starred: false
+        starred: false,
+        notes: '',
+        links: [{ url: '', price: '', source: '' }]
       });
       setShowAddItem(false);
       fetchItems();
@@ -229,11 +234,39 @@ function BudgetPlanner() {
     'Category': item.budget_categories?.name || 'Uncategorised',
     'Price': item.price || 0,
     'Price Source': item.price_source || '',
+    'Notes': item.notes || '',
+    'Links': (() => {
+      try {
+        return item.links ? JSON.parse(item.links).map(link => `${link.source}: ${link.url} (£${link.price})`).join('; ') : '';
+      } catch {
+        return '';
+      }
+    })(),
     'Starred': item.starred ? 'Yes' : 'No',
     'Purchased': item.purchased ? 'Yes' : 'No',
     'Added By': item.profiles?.full_name || item.profiles?.email || '',
     'Created': new Date(item.created_at).toLocaleDateString()
   }));
+
+  // Helper functions for managing links
+  const addLink = () => {
+    setNewItem({
+      ...newItem,
+      links: [...newItem.links, { url: '', price: '', source: '' }]
+    });
+  };
+
+  const updateLink = (index, field, value) => {
+    const updatedLinks = newItem.links.map((link, i) => 
+      i === index ? { ...link, [field]: value } : link
+    );
+    setNewItem({ ...newItem, links: updatedLinks });
+  };
+
+  const removeLink = (index) => {
+    const updatedLinks = newItem.links.filter((_, i) => i !== index);
+    setNewItem({ ...newItem, links: updatedLinks });
+  };
 
   if (loading) {
     return <div className="loading">Loading budget...</div>;
@@ -385,6 +418,38 @@ function BudgetPlanner() {
                     <span className="price-source">from {item.price_source}</span>
                   )}
                 </div>
+                {item.notes && (
+                  <div className="item-notes">
+                    <strong>Notes:</strong> {item.notes}
+                  </div>
+                )}
+                {item.links && (() => {
+                  try {
+                    return JSON.parse(item.links).length > 0;
+                  } catch {
+                    return false;
+                  }
+                })() && (
+                  <div className="item-links">
+                    <strong>Links:</strong>
+                    <div className="links-list">
+                      {(() => {
+                        try {
+                          return JSON.parse(item.links);
+                        } catch {
+                          return [];
+                        }
+                      })().map((link, index) => (
+                        <div key={index} className="link-item">
+                          <a href={link.url} target="_blank" rel="noopener noreferrer">
+                            {link.source || 'Link'}
+                          </a>
+                          {link.price && <span className="link-price">£{parseFloat(link.price).toFixed(2)}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="item-footer">
                   <span className="added-by">
                     Added by {item.profiles?.full_name || item.profiles?.email}
@@ -442,6 +507,59 @@ function BudgetPlanner() {
                 placeholder="e.g., John Lewis"
               />
             </div>
+            <div className="form-group">
+              <label>Notes</label>
+              <textarea
+                value={newItem.notes}
+                onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+                placeholder="Any additional notes about this item..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Links & Alternative Prices</label>
+              {newItem.links.map((link, index) => (
+                <div key={index} className="link-input-group">
+                  <input
+                    type="url"
+                    value={link.url}
+                    onChange={(e) => updateLink(index, 'url', e.target.value)}
+                    placeholder="https://..."
+                  />
+                  <input
+                    type="text"
+                    value={link.source}
+                    onChange={(e) => updateLink(index, 'source', e.target.value)}
+                    placeholder="Source name"
+                  />
+                  <input
+                    type="number"
+                    value={link.price}
+                    onChange={(e) => updateLink(index, 'price', e.target.value)}
+                    placeholder="Price"
+                    step="0.01"
+                  />
+                  {newItem.links.length > 1 && (
+                    <button 
+                      type="button"
+                      className="remove-link-button"
+                      onClick={() => removeLink(index)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button 
+                type="button"
+                className="add-link-button"
+                onClick={addLink}
+              >
+                + Add Another Link
+              </button>
+            </div>
+            
             <div className="form-group checkbox">
               <label>
                 <input
