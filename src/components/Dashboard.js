@@ -19,55 +19,55 @@ function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  async function fetchData() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      setProfile(profileData);
-      
-      // Calculate pregnancy week and days until due
-      if (profileData?.due_date) {
-        const dueDate = new Date(profileData.due_date);
-        const today = new Date();
-        const diffTime = dueDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        setDaysUntilDue(diffDays);
+    async function loadDashboardData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
         
-        // Calculate current week (assuming 40 weeks total)
-        const totalDays = 280; // 40 weeks * 7 days
-        const daysPregnant = totalDays - diffDays;
-        const weeksPregnant = Math.floor(daysPregnant / 7);
-        setCurrentWeek(weeksPregnant > 0 ? weeksPregnant : 0);
-      }
-      
-      // Fetch family members
-      if (profileData?.family_id) {
-        const { data: members } = await supabase
+        // Fetch profile
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('full_name, email')
-          .eq('family_id', profileData.family_id)
-          .neq('id', user.id);
-        setFamilyMembers(members || []);
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        setProfile(profileData);
+        
+        // Calculate pregnancy week and days until due
+        if (profileData?.due_date) {
+          const dueDate = new Date(profileData.due_date);
+          const today = new Date();
+          const diffTime = dueDate - today;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          setDaysUntilDue(diffDays);
+          
+          // Calculate current week (assuming 40 weeks total)
+          const totalDays = 280; // 40 weeks * 7 days
+          const daysPregnant = totalDays - diffDays;
+          const weeksPregnant = Math.floor(daysPregnant / 7);
+          setCurrentWeek(weeksPregnant > 0 ? weeksPregnant : 0);
+        }
+        
+        // Fetch family members
+        if (profileData?.family_id) {
+          const { data: members } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('family_id', profileData.family_id)
+            .neq('id', user.id);
+          setFamilyMembers(members || []);
+        }
+        
+        // Fetch stats
+        await fetchStats(profileData.family_id);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      // Fetch stats
-      await fetchStats(profileData.family_id);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
     }
-  }
+    
+    loadDashboardData();
+  }, []);
 
   async function fetchStats(familyId) {
     try {
