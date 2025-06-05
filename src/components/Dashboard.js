@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Clock, Users, Sparkles } from 'lucide-react';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -13,13 +13,14 @@ function Dashboard() {
     hospitalBag: { total: 0, packed: 0 },
     babyNames: { total: 0 }
   });
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [daysUntilDue, setDaysUntilDue] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(null);
 
   useEffect(() => {
     fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   async function fetchData() {
     try {
@@ -47,6 +48,16 @@ function Dashboard() {
         const daysPregnant = totalDays - diffDays;
         const weeksPregnant = Math.floor(daysPregnant / 7);
         setCurrentWeek(weeksPregnant > 0 ? weeksPregnant : 0);
+      }
+      
+      // Fetch family members
+      if (profileData?.family_id) {
+        const { data: members } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('family_id', profileData.family_id)
+          .neq('id', user.id);
+        setFamilyMembers(members || []);
       }
       
       // Fetch stats
@@ -122,19 +133,36 @@ function Dashboard() {
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
-        <h1>Welcome, {profile?.full_name || 'Parent-to-be'}!</h1>
+        <div className="header-content">
+          <div className="welcome-section">
+            <h1>Welcome back, {profile?.full_name || 'Parent-to-be'}! ✨</h1>
+            <p className="tagline">Your pregnancy journey is looking amazing</p>
+          </div>
+          
+          {familyMembers.length > 0 && (
+            <div className="family-indicator">
+              <Users size={16} />
+              <span>Sharing with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </div>
+        
         {daysUntilDue !== null && (
           <div className="pregnancy-info">
-            <div className="info-card">
-              <Calendar size={24} color="#d4a5d4" />
-              <div>
+            <div className="info-card highlight">
+              <div className="info-icon">
+                <Calendar size={24} />
+              </div>
+              <div className="info-content">
                 <p className="info-label">Days until due date</p>
                 <p className="info-value">{daysUntilDue} days</p>
               </div>
             </div>
-            <div className="info-card">
-              <Baby size={24} color="#f5c2c7" />
-              <div>
+            <div className="info-card highlight">
+              <div className="info-icon">
+                <Baby size={24} />
+              </div>
+              <div className="info-content">
                 <p className="info-label">Current week</p>
                 <p className="info-value">Week {currentWeek}</p>
               </div>
@@ -144,91 +172,138 @@ function Dashboard() {
       </div>
 
       <div className="quick-stats">
-        <Link to="/budget" className="stat-card">
+        <Link to="/budget" className="stat-card budget">
           <div className="stat-icon">
-            <DollarSign size={32} color="#9fd3c7" />
+            <DollarSign size={28} />
           </div>
           <div className="stat-content">
-            <h3>Budget</h3>
+            <h3>Budget Tracker</h3>
             <p className="stat-value">£{stats.budget.spent.toFixed(2)}</p>
             <p className="stat-label">of £{stats.budget.total.toFixed(2)} spent</p>
-
+            <div className="stat-percentage">
+              {stats.budget.total > 0 ? Math.round((stats.budget.spent / stats.budget.total) * 100) : 0}% used
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
           </div>
         </Link>
 
-        <Link to="/items" className="stat-card">
+        <Link to="/items" className="stat-card items">
           <div className="stat-icon">
-            <Package size={32} color="#b5d6f5" />
+            <Package size={28} />
           </div>
           <div className="stat-content">
             <h3>Baby Items</h3>
             <p className="stat-value">{stats.babyItems.purchased}</p>
-            <p className="stat-label">of {stats.babyItems.total} purchased</p>
-
+            <p className="stat-label">of {stats.babyItems.total} collected</p>
+            <div className="stat-percentage">
+              {stats.babyItems.total > 0 ? Math.round((stats.babyItems.purchased / stats.babyItems.total) * 100) : 0}% complete
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
           </div>
         </Link>
 
-        <Link to="/wishlist" className="stat-card">
+        <Link to="/wishlist" className="stat-card wishlist">
           <div className="stat-icon">
-            <Gift size={32} color="#f5c2c7" />
+            <Gift size={28} />
           </div>
           <div className="stat-content">
             <h3>Wishlist</h3>
             <p className="stat-value">{stats.wishlist.purchased}</p>
             <p className="stat-label">of {stats.wishlist.total} received</p>
-
+            <div className="stat-percentage">
+              {stats.wishlist.total > 0 ? Math.round((stats.wishlist.purchased / stats.wishlist.total) * 100) : 0}% gifted
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
           </div>
         </Link>
 
-        <Link to="/hospital-bag" className="stat-card">
+        <Link to="/hospital-bag" className="stat-card hospital">
           <div className="stat-icon">
-            <Briefcase size={32} color="#ffd6a5" />
+            <Briefcase size={28} />
           </div>
           <div className="stat-content">
             <h3>Hospital Bag</h3>
             <p className="stat-value">{stats.hospitalBag.packed}</p>
             <p className="stat-label">of {stats.hospitalBag.total} packed</p>
-
+            <div className="stat-percentage">
+              {stats.hospitalBag.total > 0 ? Math.round((stats.hospitalBag.packed / stats.hospitalBag.total) * 100) : 0}% ready
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
           </div>
         </Link>
 
-        <Link to="/names" className="stat-card">
+        <Link to="/names" className="stat-card names">
           <div className="stat-icon">
-            <Heart size={32} color="#d4a5d4" />
+            <Heart size={28} />
           </div>
           <div className="stat-content">
             <h3>Baby Names</h3>
             <p className="stat-value">{stats.babyNames.total}</p>
             <p className="stat-label">names suggested</p>
+            <div className="stat-percentage">
+              {stats.babyNames.total > 0 ? 'Ideas flowing!' : 'Get started'}
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
           </div>
         </Link>
       </div>
 
       <div className="dashboard-tips">
-        <h2>Quick Tips</h2>
+        <h2><Clock size={20} /> Quick Tips & Progress</h2>
         <div className="tips-grid">
           {currentWeek && currentWeek < 20 && (
-            <div className="tip-card">
-              <Clock size={20} color="#9fd3c7" />
-              <p>Start planning your baby registry early to give friends and family time to shop!</p>
+            <div className="tip-card early">
+              <Clock size={20} />
+              <div>
+                <h4>Early Preparation</h4>
+                <p>Perfect time to start planning your baby registry. Give friends and family time to shop!</p>
+              </div>
             </div>
           )}
           {currentWeek && currentWeek >= 28 && (
-            <div className="tip-card">
-              <Briefcase size={20} color="#ffd6a5" />
-              <p>Time to start packing your hospital bag! Aim to have it ready by week 36.</p>
+            <div className="tip-card urgent">
+              <Briefcase size={20} />
+              <div>
+                <h4>Hospital Bag Time</h4>
+                <p>Start packing your hospital bag! Aim to have it ready by week 36.</p>
+              </div>
             </div>
           )}
           {stats.budget.spent > stats.budget.total * 0.8 && (
-            <div className="tip-card">
-              <DollarSign size={20} color="#ff6b6b" />
-              <p>You're approaching your budget limit. Consider reviewing your spending priorities.</p>
+            <div className="tip-card warning">
+              <DollarSign size={20} />
+              <div>
+                <h4>Budget Check</h4>
+                <p>You're approaching your budget limit. Consider reviewing your spending priorities.</p>
+              </div>
             </div>
           )}
           {stats.babyNames.total === 0 && (
-            <div className="tip-card">
-              <Heart size={20} color="#d4a5d4" />
-              <p>Start collecting baby name ideas! It's fun to see what names family members suggest.</p>
+            <div className="tip-card suggestion">
+              <Heart size={20} />
+              <div>
+                <h4>Name Ideas</h4>
+                <p>Start collecting baby name ideas! It's fun to see what family members suggest.</p>
+              </div>
+            </div>
+          )}
+          {familyMembers.length > 0 && (
+            <div className="tip-card family">
+              <Users size={20} />
+              <div>
+                <h4>Family Collaboration</h4>
+                <p>Great! You're sharing this journey with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}. Everyone can contribute!</p>
+              </div>
             </div>
           )}
         </div>

@@ -8,7 +8,6 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
-  // const [inviteEmail, setInviteEmail] = useState(''); // Removed unused variables
   const [familyCode, setFamilyCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -39,7 +38,7 @@ function Profile() {
         due_date: data.due_date || ''
       });
       
-      // Generate a shareable family code (first 8 chars of family_id without hyphens)
+      // Generate family code
       if (data.family_id) {
         setFamilyCode(data.family_id.replace(/-/g, '').substring(0, 8).toUpperCase());
       }
@@ -63,10 +62,11 @@ function Profile() {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('family_id', profile.family_id);
+          .eq('family_id', profile.family_id)
+          .neq('id', user.id);
 
         if (!error) {
-          setFamilyMembers(data.filter(member => member.id !== user.id));
+          setFamilyMembers(data || []);
         }
       }
     } catch (error) {
@@ -98,14 +98,7 @@ function Profile() {
     }
   }
 
-  function copyFamilyCode() {
-    navigator.clipboard.writeText(familyCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  // PHASE 3: Working family join functionality
-  const handleJoinFamily = async () => {
+  async function handleJoinFamily() {
     if (!joinCode || joinCode.length !== 8) {
       alert('Please enter a valid 8-character family code');
       return;
@@ -113,8 +106,6 @@ function Profile() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      console.log('Looking for family with code:', joinCode);
       
       // Find all profiles and their family codes
       const { data: allProfiles, error: searchError } = await supabase
@@ -128,7 +119,7 @@ function Profile() {
         return;
       }
       
-      // Find matching family using same logic as test
+      // Find matching family
       const matchingProfile = allProfiles?.find(profile => {
         if (!profile.family_id) return false;
         const profileCode = profile.family_id.replace(/-/g, '').substring(0, 8).toUpperCase();
@@ -136,13 +127,9 @@ function Profile() {
       });
       
       if (!matchingProfile) {
-        console.log('No family found with code:', joinCode);
-        console.log('Available codes:', allProfiles.map(p => p.family_id.replace(/-/g, '').substring(0, 8).toUpperCase()));
         alert('Invalid family code. Please check the code and try again.');
         return;
       }
-      
-      console.log('Found family_id:', matchingProfile.family_id);
 
       // Check if user is already in this family
       const { data: currentProfile } = await supabase
@@ -167,10 +154,10 @@ function Profile() {
         throw updateError;
       }
 
-      alert('🎉 Successfully joined the family!\n\nYou can now see and share data with your family members.\n\nRefresh the page to see shared data.');
+      alert('🎉 Successfully joined the family!\n\nYou can now see and share data with your family members.');
       setJoinCode('');
       
-      // Refresh the page to load shared family data
+      // Refresh to show updated family data
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -179,79 +166,13 @@ function Profile() {
       console.error('Error joining family:', error);
       alert('Error joining family: ' + error.message);
     }
-  };
+  }
 
-  // PHASE 1: Test family code logic (temporary function)
-  const testFamilyCodeLogic = async () => {
-    try {
-      console.clear();
-      console.log('=== PHASE 1: TESTING FAMILY CODE LOGIC ===');
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('1. Current user ID:', user.id);
-      console.log('   User email:', user.email);
-      
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('family_id, full_name')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        alert('❌ Cannot fetch your profile. Check console.');
-        return;
-      }
-      
-      console.log('2. Your profile:', profile);
-      
-      if (profile?.family_id) {
-        // Generate family code using the same logic as the main app
-        const myCode = profile.family_id.replace(/-/g, '').substring(0, 8).toUpperCase();
-        console.log('3. Your family_id:', profile.family_id);
-        console.log('   Your family code:', myCode);
-        
-        // Test the matching logic
-        const { data: allProfiles, error: allProfilesError } = await supabase
-          .from('profiles')
-          .select('family_id, email')
-          .not('family_id', 'is', null);
-        
-        if (allProfilesError) {
-          console.error('Error fetching all profiles:', allProfilesError);
-        } else {
-          console.log('4. All profiles with family_id:', allProfiles);
-          console.log('   Total profiles:', allProfiles.length);
-          
-          // Test if we can find our own family using the code
-          const foundProfile = allProfiles?.find(p => 
-            p.family_id.replace(/-/g, '').substring(0, 8).toUpperCase() === myCode
-          );
-          
-          console.log('5. Code matching test:');
-          console.log('   Looking for code:', myCode);
-          console.log('   Found profile:', foundProfile);
-          console.log('   Match success:', foundProfile ? '✅ SUCCESS' : '❌ FAILED');
-          console.log('   Matches your family_id:', foundProfile?.family_id === profile.family_id);
-          
-          // Show codes for all profiles for debugging
-          console.log('6. All family codes:');
-          allProfiles.forEach(p => {
-            const code = p.family_id.replace(/-/g, '').substring(0, 8).toUpperCase();
-            console.log(`   ${p.email}: ${code}`);
-          });
-        }
-      } else {
-        console.log('❌ No family_id found in your profile!');
-      }
-      
-      console.log('=== PHASE 1 TEST COMPLETE ===');
-      alert('✅ Phase 1 test complete! Check the browser console (F12) for detailed results.');
-    } catch (error) {
-      console.error('Phase 1 test error:', error);
-      alert('❌ Phase 1 test failed: ' + error.message);
-    }
-  };
+  function copyFamilyCode() {
+    navigator.clipboard.writeText(familyCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -264,55 +185,6 @@ function Profile() {
   return (
     <div className="profile-container">
       <h1>Profile Settings</h1>
-      
-      <div className="profile-section">
-        <h2>🧪 Phase 3: Family Sharing (ACTIVE)</h2>
-        <p><strong>✅ Full family data sharing is now enabled!</strong></p>
-        <div className="code-display" style={{marginBottom: '1rem'}}>
-          <span className="family-code">{profile?.family_id ? profile.family_id.replace(/-/g, '').substring(0, 8).toUpperCase() : 'Loading...'}</span>
-          <span style={{marginLeft: '1rem', color: '#666'}}>← Share this code with your partner!</span>
-        </div>
-        
-        <div style={{marginBottom: '1rem'}}>
-          <h4>🔗 Join a Family:</h4>
-          <div className="join-form">
-            <input
-              type="text"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="Enter 8-character family code"
-              maxLength={8}
-              style={{marginRight: '0.5rem'}}
-            />
-            <button onClick={handleJoinFamily} disabled={!joinCode || joinCode.length !== 8}>
-              Join Family
-            </button>
-          </div>
-        </div>
-        
-        <button className="debug-button" onClick={testFamilyCodeLogic}>
-          📝 Test Family Code Logic
-        </button>
-        
-        <div style={{marginTop: '1.5rem'}}>
-          <h4>👥 Family Members ({familyMembers.length + 1}):</h4>
-          <div className="member-list">
-            <div className="member-item current-user">
-              <span>{profile?.full_name || profile?.email} (You)</span>
-              <span className="role-badge primary">Primary</span>
-            </div>
-            {familyMembers.map(member => (
-              <div key={member.id} className="member-item">
-                <span>{member.full_name || member.email}</span>
-                <span className="role-badge">Family</span>
-              </div>
-            ))}
-            {familyMembers.length === 0 && (
-              <p style={{color: '#666', fontStyle: 'italic'}}>No family members yet. Share your code above!</p>
-            )}
-          </div>
-        </div>
-      </div>
       
       <div className="profile-section">
         <h2><User size={20} /> Personal Information</h2>
@@ -360,13 +232,24 @@ function Profile() {
         
         <div className="family-code-section">
           <h3>Your Family Code</h3>
-          <p>Share this code with your partner or family members so they can join your pregnancy journey!</p>
+          <p>Share this code with your partner or family members so they can join your pregnancy journey and share all your planning data!</p>
           <div className="code-display">
-            <span className="family-code">{familyCode}</span>
+            <span className="family-code">{familyCode || 'Loading...'}</span>
             <button onClick={copyFamilyCode} className="copy-button">
               {copied ? <Check size={16} /> : <Copy size={16} />}
               {copied ? 'Copied!' : 'Copy'}
             </button>
+          </div>
+          <div className="sharing-info">
+            <p><strong>What gets shared:</strong></p>
+            <ul>
+              <li>✅ Budget items and categories</li>
+              <li>✅ Baby items checklist</li>
+              <li>✅ Wishlist items</li>
+              <li>✅ Hospital bag items</li>
+              <li>✅ Baby name suggestions</li>
+            </ul>
+            <p><em>Each item shows who added it, so you can keep track of contributions!</em></p>
           </div>
         </div>
 
@@ -381,27 +264,31 @@ function Profile() {
               placeholder="Enter 8-character code"
               maxLength={8}
             />
-            <button onClick={handleJoinFamily}>
+            <button onClick={handleJoinFamily} disabled={!joinCode || joinCode.length !== 8}>
               Join Family
             </button>
           </div>
         </div>
         
         <div className="family-members">
-          <h3>Family Members</h3>
-          {familyMembers.length > 0 ? (
-            <ul className="member-list">
-              {familyMembers.map(member => (
-                <li key={member.id}>
-                  <Mail size={16} />
-                  {member.full_name || member.email}
-                  {member.role && <span className="role-badge">{member.role}</span>}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="no-members">No family members yet. Share your family code to invite them!</p>
-          )}
+          <h3>Family Members ({familyMembers.length + 1})</h3>
+          <div className="member-list">
+            <div className="member-item current-user">
+              <Mail size={16} />
+              <span>{profile?.full_name || profile?.email} (You)</span>
+              <span className="role-badge primary">Primary Account</span>
+            </div>
+            {familyMembers.map(member => (
+              <div key={member.id} className="member-item">
+                <Mail size={16} />
+                <span>{member.full_name || member.email}</span>
+                <span className="role-badge">Family Member</span>
+              </div>
+            ))}
+            {familyMembers.length === 0 && (
+              <p className="no-additional-members">No additional family members yet. Share your family code to invite them!</p>
+            )}
+          </div>
         </div>
       </div>
       
