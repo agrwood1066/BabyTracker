@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Filter } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
   const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [budgetCategories, setBudgetCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);

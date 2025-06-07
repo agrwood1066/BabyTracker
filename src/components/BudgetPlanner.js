@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Plus, Star, Check, Edit2, Trash2, Download } from 'lucide-react';
+import { Plus, Star, Check, Edit2, Download } from 'lucide-react';
 import { CSVLink } from 'react-csv';
 import './BudgetPlanner.css';
 
@@ -9,19 +9,10 @@ function BudgetPlanner() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddItem, setShowAddItem] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
   const [editingBudget, setEditingBudget] = useState(null);
-  const [newItem, setNewItem] = useState({
-    item_name: '',
-    category_id: '',
-    price: '',
-    price_source: '',
-    starred: false,
-    notes: '',
-    links: [{ url: '', price: '', source: '' }]
-  });
+
   const [newCategory, setNewCategory] = useState({
     name: '',
     expected_budget: ''
@@ -120,25 +111,7 @@ function BudgetPlanner() {
     }
   }
 
-  async function addItem() {
-    if (!newItem.item_name) return;
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('family_id')
-        .eq('id', user.id)
-        .single();
-
-      // Items are now added via Shopping List
-      alert('Please use the Shopping List to add new items with budget categories.');
-      setShowAddItem(false);
-    } catch (error) {
-      console.error('Error adding item:', error);
-      alert('Error adding item');
-    }
-  }
 
   async function togglePurchased(item) {
     try {
@@ -168,21 +141,7 @@ function BudgetPlanner() {
     }
   }
 
-  async function deleteItem(id) {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('baby_items')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchItems();
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
-  }
 
   async function updateCategoryBudget(categoryId, newBudget) {
     try {
@@ -230,25 +189,7 @@ function BudgetPlanner() {
     'Created': new Date(item.created_at).toLocaleDateString()
   }));
 
-  // Helper functions for managing links
-  const addLink = () => {
-    setNewItem({
-      ...newItem,
-      links: [...newItem.links, { url: '', price: '', source: '' }]
-    });
-  };
 
-  const updateLink = (index, field, value) => {
-    const updatedLinks = newItem.links.map((link, i) => 
-      i === index ? { ...link, [field]: value } : link
-    );
-    setNewItem({ ...newItem, links: updatedLinks });
-  };
-
-  const removeLink = (index) => {
-    const updatedLinks = newItem.links.filter((_, i) => i !== index);
-    setNewItem({ ...newItem, links: updatedLinks });
-  };
 
   if (loading) {
     return <div className="loading">Loading budget...</div>;
