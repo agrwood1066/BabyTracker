@@ -335,7 +335,6 @@ function BudgetPlanner() {
                   <span className="category-tag">
                     {item.budget_categories?.name || 'Uncategorised'}
                   </span>
-                  <span className="item-category">{item.category}</span>
                   <span className="price">£{item.price?.toFixed(2) || '0.00'}</span>
                   {item.price_source && (
                     <span className="price-source">from {item.price_source}</span>

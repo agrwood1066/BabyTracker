@@ -42,7 +42,6 @@ CREATE TABLE baby_items (
     family_id UUID NOT NULL,
     added_by UUID NOT NULL REFERENCES profiles(id),
     item_name TEXT NOT NULL,
-    category TEXT NOT NULL,
     quantity INTEGER DEFAULT 1,
     notes TEXT,
     purchased BOOLEAN DEFAULT false,
@@ -53,6 +52,8 @@ CREATE TABLE baby_items (
     price_source TEXT,
     starred BOOLEAN DEFAULT false,
     links JSONB,
+    -- New needed_by field for timing
+    needed_by TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

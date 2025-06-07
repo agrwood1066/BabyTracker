@@ -1,3 +1,112 @@
+/* Shopping Mode Budget Bar */
+.shopping-mode-budget-bar {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.budget-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.budget-bar-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.budget-totals {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.budget-bar-container {
+  position: relative;
+  height: 12px;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.budget-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.budget-bar.spent {
+  background-color: #4CAF50;
+  z-index: 2;
+}
+
+.budget-bar.pending {
+  background-color: #ff9800;
+  z-index: 1;
+}
+
+.budget-bar-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  justify-content: center;
+}
+
+.budget-bar-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.budget-bar-legend .legend-item.spent::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+}
+
+.budget-bar-legend .legend-item.pending::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: #ff9800;
+  border-radius: 50%;
+}
+
+.budget-bar-legend .legend-item.remaining::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 50%;
+}
+
+/* Needed By Tag */
+.needed-by-tag {
+  background-color: #fff3e0;
+  color: #f57c00;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+}
+
+.shopping-item-details .needed-by {
+  color: #f57c00;
+  font-size: 0.85rem;
+}
+
+/* Edit Button */
+.icon-button.edit {
+  color: #2196F3;
+}
+
 .shopping-list-container {
   padding: 2rem;
   max-width: 1400px;

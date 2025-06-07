@@ -1,6 +1,64 @@
-import React, { useState, useEffect } from 'react';
+  async function editItem(item) {
+    setEditingItem(item);
+    setNewItem({
+      item_name: item.item_name,
+      quantity: item.quantity,
+      notes: item.notes || '',
+      priority: item.priority,
+      budget_category_id: item.budget_category_id || '',
+      price: item.price || '',
+      price_source: item.price_source || '',
+      starred: item.starred,
+      needed_by: item.needed_by || '',
+      links: item.links ? JSON.parse(item.links) : [{ url: '', price: '', source: '' }]
+    });
+    setShowEditItem(true);
+  }
+
+  async function updateItem() {
+    if (!newItem.item_name || !editingItem) return;
+
+    try {
+      const itemData = {
+        ...newItem,
+        price: parseFloat(newItem.price) || null,
+        links: JSON.stringify(newItem.links.filter(link => link.url))
+      };
+
+      // Remove empty budget_category_id
+      if (!itemData.budget_category_id) {
+        itemData.budget_category_id = null;
+      }
+
+      const { error } = await supabase
+        .from('baby_items')
+        .update(itemData)
+        .eq('id', editingItem.id);
+
+      if (error) throw error;
+
+      setNewItem({
+        item_name: '',
+        quantity: 1,
+        notes: '',
+        priority: 'medium',
+        budget_category_id: '',
+        price: '',
+        price_source: '',
+        starred: false,
+        needed_by: '',
+        links: [{ url: '', price: '', source: '' }]
+      });
+      setShowEditItem(false);
+      setEditingItem(null);
+      fetchItems();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item');
+    }
+  }import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Edit2 } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
@@ -8,16 +66,17 @@ function ShoppingList() {
   const [budgetCategories, setBudgetCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [shoppingMode, setShoppingMode] = useState(false);
-  const [filterCategory, setFilterCategory] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterBudgetCategory, setFilterBudgetCategory] = useState('all');
+  const [filterNeededBy, setFilterNeededBy] = useState('all');
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('');
   const [newItem, setNewItem] = useState({
     item_name: '',
-    category: '',
     quantity: 1,
     notes: '',
     priority: 'medium',
@@ -25,20 +84,16 @@ function ShoppingList() {
     price: '',
     price_source: '',
     starred: false,
+    needed_by: '',
     links: [{ url: '', price: '', source: '' }]
   });
 
-  const itemCategories = [
-    'Clothing',
-    'Feeding',
-    'Sleeping',
-    'Bathing',
-    'Nappies & Changing',
-    'Travel',
-    'Toys & Entertainment',
-    'Health & Safety',
-    'Nursery',
-    'Other'
+  // Needed By options
+  const neededByOptions = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+    'Jan-Feb', 'Feb-Mar', 'Mar-Apr', 'Apr-May', 'May-Jun', 'Jun-Jul',
+    'Jul-Aug', 'Aug-Sep', 'Sep-Oct', 'Oct-Nov', 'Nov-Dec'
   ];
 
   useEffect(() => {
@@ -106,7 +161,7 @@ function ShoppingList() {
   }
 
   async function addItem() {
-    if (!newItem.item_name || !newItem.category) return;
+    if (!newItem.item_name) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -137,7 +192,6 @@ function ShoppingList() {
 
       setNewItem({
         item_name: '',
-        category: '',
         quantity: 1,
         notes: '',
         priority: 'medium',
@@ -145,6 +199,7 @@ function ShoppingList() {
         price: '',
         price_source: '',
         starred: false,
+        needed_by: '',
         links: [{ url: '', price: '', source: '' }]
       });
       setShowAddItem(false);
@@ -764,6 +819,194 @@ function AddItemModal({
             <select
               value={newItem.budget_category_id}
               onChange={(e) => setNewItem({ ...newItem, budget_category_id: e.target.value })}
+            >
+              <option value="">Select budget category</option>
+              {budgetCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="form-group">
+            <label>Needed By</label>
+            <select
+              value={newItem.needed_by}
+              onChange={(e) => setNewItem({ ...newItem, needed_by: e.target.value })}
+            >
+              <option value="">Select timeframe</option>
+              {neededByOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Quantity</label>
+            <input
+              type="number"
+              min="1"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Priority</label>
+            <select
+              value={newItem.priority}
+              onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Price</label>
+            <input
+              type="number"
+              value={newItem.price}
+              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+              placeholder="0.00"
+              step="0.01"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Price Source</label>
+            <input
+              type="text"
+              value={newItem.price_source}
+              onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
+              placeholder="e.g., John Lewis"
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Notes</label>
+          <textarea
+            value={newItem.notes}
+            onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+            placeholder="Any additional notes..."
+            rows="3"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Links & Alternative Prices</label>
+          {newItem.links.map((link, index) => (
+            <div key={index} className="link-input-group">
+              <input
+                type="url"
+                value={link.url}
+                onChange={(e) => updateLink(index, 'url', e.target.value)}
+                placeholder="https://..."
+              />
+              <input
+                type="text"
+                value={link.source}
+                onChange={(e) => updateLink(index, 'source', e.target.value)}
+                placeholder="Source name"
+              />
+              <input
+                type="number"
+                value={link.price}
+                onChange={(e) => updateLink(index, 'price', e.target.value)}
+                placeholder="Price"
+                step="0.01"
+              />
+              {newItem.links.length > 1 && (
+                <button 
+                  type="button"
+                  className="remove-link-button"
+                  onClick={() => removeLink(index)}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button"
+            className="add-link-button"
+            onClick={addLink}
+          >
+            + Add Another Link
+          </button>
+        </div>
+
+        <div className="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={newItem.starred}
+              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
+            />
+            Star this item
+          </label>
+        </div>
+
+        <div className="modal-actions">
+          <button className="cancel-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button className="save-button" onClick={onSave}>
+            {isEditing ? 'Update Item' : 'Add Item'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Bulk Assign Modal Component
+function BulkAssignModal({ 
+  budgetCategories, 
+  bulkCategory, 
+  setBulkCategory, 
+  onSave, 
+  onCancel, 
+  selectedCount 
+}) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
+        <h2>Assign Budget Category</h2>
+        <p>Assign budget category to {selectedCount} selected item{selectedCount > 1 ? 's' : ''}</p>
+        
+        <div className="form-group">
+          <label>Budget Category</label>
+          <select
+            value={bulkCategory}
+            onChange={(e) => setBulkCategory(e.target.value)}
+          >
+            <option value="">Select budget category</option>
+            {budgetCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="modal-actions">
+          <button className="cancel-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button className="save-button" onClick={onSave} disabled={!bulkCategory}>
+            Assign Category
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ShoppingList;id: e.target.value })}
             >
               <option value="">Select budget category</option>
               {budgetCategories.map(cat => (
