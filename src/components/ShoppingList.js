@@ -41,9 +41,7 @@ function ShoppingList() {
   // Needed By options
   const neededByOptions = [
     'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-    'Jan-Feb', 'Feb-Mar', 'Mar-Apr', 'Apr-May', 'May-Jun', 'Jun-Jul',
-    'Jul-Aug', 'Aug-Sep', 'Sep-Oct', 'Oct-Nov', 'Nov-Dec'
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   useEffect(() => {
@@ -180,26 +178,32 @@ function ShoppingList() {
   }
 
   async function updateItem() {
-    if (!newItem.item_name || !editingItem) return;
+    if (!newItem.item_name || !editingItem || !newItem.category) return;
 
     try {
       const itemData = {
-        ...newItem,
+        item_name: newItem.item_name,
+        quantity: newItem.quantity,
+        notes: newItem.notes || '',
+        priority: newItem.priority,
+        category: newItem.category,
+        budget_category_id: newItem.budget_category_id || null,
         price: parseFloat(newItem.price) || null,
+        price_source: newItem.price_source || '',
+        starred: newItem.starred,
+        needed_by: newItem.needed_by || '',
         links: JSON.stringify(newItem.links.filter(link => link.url))
       };
-
-      // Remove empty budget_category_id
-      if (!itemData.budget_category_id) {
-        itemData.budget_category_id = null;
-      }
 
       const { error } = await supabase
         .from('baby_items')
         .update(itemData)
         .eq('id', editingItem.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       setNewItem({
         item_name: '',
@@ -219,7 +223,7 @@ function ShoppingList() {
       fetchItems();
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('Error updating item');
+      alert(`Error updating item: ${error.message}`);
     }
   }
 
@@ -632,7 +636,7 @@ function ShoppingList() {
 function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary }) {
   const groupedItems = budgetCategories.reduce((acc, budgetCat) => {
     const categoryItems = items.filter(item => 
-      item.budget_category_id === budgetCat.id && !item.purchased
+      item.budget_category_id === budgetCat.id
     );
     if (categoryItems.length > 0) {
       acc[budgetCat.name] = categoryItems;
@@ -642,7 +646,7 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
 
   // Add uncategorised items
   const uncategorisedItems = items.filter(item => 
-    !item.budget_category_id && !item.purchased
+    !item.budget_category_id
   );
   if (uncategorisedItems.length > 0) {
     groupedItems['Uncategorised'] = uncategorisedItems;
@@ -652,7 +656,7 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
     <div className="shopping-mode">
       <div className="shopping-mode-header">
         <h2>Shopping Mode</h2>
-        <p>Tap items as you add them to your basket</p>
+        <p>Tap items to mark as purchased/unpurchased</p>
       </div>
 
       {Object.entries(groupedItems).map(([categoryName, categoryItems]) => {
@@ -673,7 +677,7 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
               {categoryItems.map(item => (
                 <div 
                   key={item.id} 
-                  className="shopping-item"
+                  className={`shopping-item ${item.purchased ? 'purchased' : ''}`}
                   onClick={() => togglePurchased(item)}
                 >
                   <div className="shopping-item-content">
@@ -686,11 +690,14 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                       {item.price_source && (
                         <span className="source">from {item.price_source}</span>
                       )}
+                      {item.purchased && (
+                        <span className="purchased-label">✓ Purchased</span>
+                      )}
                     </div>
                   </div>
                   <div className="shopping-item-action">
-                    <div className="checkbox">
-                      <Check size={16} />
+                    <div className={`checkbox ${item.purchased ? 'checked' : ''}`}>
+                      {item.purchased && <Check size={16} />}
                     </div>
                   </div>
                 </div>
@@ -702,8 +709,8 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
 
       {Object.keys(groupedItems).length === 0 && (
         <div className="no-shopping-items">
-          <Check size={48} color="#4CAF50" />
-          <p>All items purchased! Well done!</p>
+          <ShoppingCart size={48} color="#ccc" />
+          <p>No items in your shopping list yet!</p>
         </div>
       )}
     </div>
@@ -753,7 +760,7 @@ function ItemCard({
             <Edit2 size={20} />
           </button>
           <button 
-            className="icon-button check"
+            className={`icon-button check ${item.purchased ? 'purchased' : ''}`}
             onClick={() => onTogglePurchased(item)}
             title={item.purchased ? 'Mark as needed' : 'Mark as purchased'}
           >
