@@ -407,8 +407,8 @@ function ShoppingList() {
         </div>
       </div>
 
-      {/* Category Progress Bars */}
-      {budgetSummary.length > 0 && (
+      {/* Category Progress Bars - Hidden in Shopping Mode */}
+      {!shoppingMode && budgetSummary.length > 0 && (
         <div className="category-progress-section">
           <h3>Budget Progress by Category</h3>
           <div className="progress-grid">
