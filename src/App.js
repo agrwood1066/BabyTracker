@@ -8,7 +8,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Navigation from './components/Navigation';
 import BudgetPlanner from './components/BudgetPlanner';
-import BabyItems from './components/BabyItems';
+import ShoppingList from './components/ShoppingList';
 import Wishlist from './components/Wishlist';
 import HospitalBag from './components/HospitalBag';
 import BabyNames from './components/BabyNames';
@@ -57,7 +57,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/budget" element={<BudgetPlanner />} />
-                <Route path="/items" element={<BabyItems />} />
+                <Route path="/shopping-list" element={<ShoppingList />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/hospital-bag" element={<HospitalBag />} />
                 <Route path="/names" element={<BabyNames />} />

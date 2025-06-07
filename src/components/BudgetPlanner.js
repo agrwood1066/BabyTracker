@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Plus, Star, Check, Edit2, Trash2, Download } from 'lucide-react';
 import { CSVLink } from 'react-csv';
@@ -64,10 +65,10 @@ function BudgetPlanner() {
         .single();
 
       const { data, error } = await supabase
-        .from('budget_items')
+        .from('baby_items')
         .select(`
           *,
-          budget_categories (
+          budget_categories!budget_category_id (
             name
           ),
           profiles!added_by (
@@ -76,6 +77,7 @@ function BudgetPlanner() {
           )
         `)
         .eq('family_id', profile.family_id)
+        .not('budget_category_id', 'is', null)
         .order('created_at', { ascending: false });
 
       if (!error) {
@@ -129,29 +131,9 @@ function BudgetPlanner() {
         .eq('id', user.id)
         .single();
 
-      const { error } = await supabase
-        .from('budget_items')
-        .insert({
-          ...newItem,
-          price: parseFloat(newItem.price) || 0,
-          links: JSON.stringify(newItem.links.filter(link => link.url)), // Only save links with URLs
-          family_id: profile.family_id,
-          added_by: user.id
-        });
-
-      if (error) throw error;
-
-      setNewItem({
-        item_name: '',
-        category_id: '',
-        price: '',
-        price_source: '',
-        starred: false,
-        notes: '',
-        links: [{ url: '', price: '', source: '' }]
-      });
+      // Items are now added via Shopping List
+      alert('Please use the Shopping List to add new items with budget categories.');
       setShowAddItem(false);
-      fetchItems();
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item');
@@ -161,7 +143,7 @@ function BudgetPlanner() {
   async function togglePurchased(item) {
     try {
       const { error } = await supabase
-        .from('budget_items')
+        .from('baby_items')
         .update({ purchased: !item.purchased })
         .eq('id', item.id);
 
@@ -175,7 +157,7 @@ function BudgetPlanner() {
   async function toggleStarred(item) {
     try {
       const { error } = await supabase
-        .from('budget_items')
+        .from('baby_items')
         .update({ starred: !item.starred })
         .eq('id', item.id);
 
@@ -191,7 +173,7 @@ function BudgetPlanner() {
 
     try {
       const { error } = await supabase
-        .from('budget_items')
+        .from('baby_items')
         .delete()
         .eq('id', id);
 
@@ -219,7 +201,7 @@ function BudgetPlanner() {
 
   const filteredItems = filterCategory === 'all' 
     ? items 
-    : items.filter(item => item.category_id === filterCategory);
+    : items.filter(item => item.budget_category_id === filterCategory);
 
   const totalSpent = filteredItems
     .filter(item => item.purchased)
@@ -277,9 +259,9 @@ function BudgetPlanner() {
       <div className="budget-header">
         <h1>Budget Planner</h1>
         <div className="budget-actions">
-          <button className="add-button" onClick={() => setShowAddItem(true)}>
-            <Plus size={16} /> Add Item
-          </button>
+          <Link to="/shopping-list" className="add-button">
+            <Plus size={16} /> Add Items to Shopping List
+          </Link>
           <button className="add-button secondary" onClick={() => setShowAddCategory(true)}>
             <Plus size={16} /> Add Category
           </button>
@@ -328,7 +310,7 @@ function BudgetPlanner() {
           <h2>Category Budgets</h2>
           <div className="categories-grid">
             {categories.map(cat => {
-              const categoryItems = items.filter(item => item.category_id === cat.id);
+              const categoryItems = items.filter(item => item.budget_category_id === cat.id);
               const categorySpent = categoryItems
                 .filter(item => item.purchased)
                 .reduce((sum, item) => sum + (item.price || 0), 0);
@@ -381,7 +363,12 @@ function BudgetPlanner() {
       )}
 
       <div className="items-section">
-        <h2>Budget Items</h2>
+        <div className="items-section-header">
+          <h2>Shopping List Items with Budget Categories</h2>
+          <p className="items-section-description">
+            Items from your <Link to="/shopping-list">Shopping List</Link> that have budget categories assigned.
+          </p>
+        </div>
         {filteredItems.length > 0 ? (
           <div className="items-list">
             {filteredItems.map(item => (
@@ -401,18 +388,13 @@ function BudgetPlanner() {
                     >
                       <Check size={16} />
                     </button>
-                    <button 
-                      className="icon-button delete"
-                      onClick={() => deleteItem(item.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 </div>
                 <div className="item-details">
                   <span className="category-tag">
                     {item.budget_categories?.name || 'Uncategorised'}
                   </span>
+                  <span className="item-category">{item.category}</span>
                   <span className="price">£{item.price?.toFixed(2) || '0.00'}</span>
                   {item.price_source && (
                     <span className="price-source">from {item.price_source}</span>
@@ -459,128 +441,14 @@ function BudgetPlanner() {
             ))}
           </div>
         ) : (
-          <p className="no-items">No items yet. Start by adding your first budget item!</p>
+          <div className="no-items">
+            <p>No shopping list items with budget categories yet.</p>
+            <p><Link to="/shopping-list">Go to Shopping List</Link> to add items and assign them to budget categories.</p>
+          </div>
         )}
       </div>
 
-      {showAddItem && (
-        <div className="modal-overlay" onClick={() => setShowAddItem(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Add Budget Item</h2>
-            <div className="form-group">
-              <label>Item Name</label>
-              <input
-                type="text"
-                value={newItem.item_name}
-                onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
-                placeholder="e.g., Pram"
-              />
-            </div>
-            <div className="form-group">
-              <label>Category</label>
-              <select
-                value={newItem.category_id}
-                onChange={(e) => setNewItem({ ...newItem, category_id: e.target.value })}
-              >
-                <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Price</label>
-              <input
-                type="number"
-                value={newItem.price}
-                onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                placeholder="0.00"
-                step="0.01"
-              />
-            </div>
-            <div className="form-group">
-              <label>Price Source</label>
-              <input
-                type="text"
-                value={newItem.price_source}
-                onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
-                placeholder="e.g., John Lewis"
-              />
-            </div>
-            <div className="form-group">
-              <label>Notes</label>
-              <textarea
-                value={newItem.notes}
-                onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
-                placeholder="Any additional notes about this item..."
-                rows={3}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Links & Alternative Prices</label>
-              {newItem.links.map((link, index) => (
-                <div key={index} className="link-input-group">
-                  <input
-                    type="url"
-                    value={link.url}
-                    onChange={(e) => updateLink(index, 'url', e.target.value)}
-                    placeholder="https://..."
-                  />
-                  <input
-                    type="text"
-                    value={link.source}
-                    onChange={(e) => updateLink(index, 'source', e.target.value)}
-                    placeholder="Source name"
-                  />
-                  <input
-                    type="number"
-                    value={link.price}
-                    onChange={(e) => updateLink(index, 'price', e.target.value)}
-                    placeholder="Price"
-                    step="0.01"
-                  />
-                  {newItem.links.length > 1 && (
-                    <button 
-                      type="button"
-                      className="remove-link-button"
-                      onClick={() => removeLink(index)}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button 
-                type="button"
-                className="add-link-button"
-                onClick={addLink}
-              >
-                + Add Another Link
-              </button>
-            </div>
-            
-            <div className="form-group checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={newItem.starred}
-                  onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-                />
-                Star this item
-              </label>
-            </div>
-            <div className="modal-actions">
-              <button className="cancel-button" onClick={() => setShowAddItem(false)}>
-                Cancel
-              </button>
-              <button className="save-button" onClick={addItem}>
-                Add Item
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {showAddCategory && (
         <div className="modal-overlay" onClick={() => setShowAddCategory(false)}>

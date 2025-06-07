@@ -1,3 +1,58 @@
+.items-section-header {
+  margin-bottom: 1.5rem;
+}
+
+.items-section-header h2 {
+  margin-bottom: 0.5rem;
+}
+
+.items-section-description {
+  color: #666;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.items-section-description a {
+  color: #9fd3c7;
+  text-decoration: none;
+}
+
+.items-section-description a:hover {
+  text-decoration: underline;
+}
+
+.item-category {
+  background-color: #f0f8ff;
+  color: #4682b4;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+}
+
+.no-items {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #666;
+}
+
+.no-items p {
+  margin-bottom: 0.5rem;
+}
+
+.no-items a {
+  color: #9fd3c7;
+  text-decoration: none;
+}
+
+.no-items a:hover {
+  text-decoration: underline;
+}
+
+.add-button {
+  text-decoration: none;
+  display: inline-flex;
+}
+
 .budget-container {
   padding: 2rem;
   max-width: 1200px;

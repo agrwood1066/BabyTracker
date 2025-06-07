@@ -53,19 +53,8 @@ CREATE TABLE IF NOT EXISTS budget_categories (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS budget_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    family_id UUID NOT NULL,
-    added_by UUID NOT NULL REFERENCES profiles(id),
-    category_id UUID REFERENCES budget_categories(id) ON DELETE SET NULL,
-    item_name TEXT NOT NULL,
-    price DECIMAL(10, 2),
-    price_source TEXT,
-    starred BOOLEAN DEFAULT false,
-    purchased BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Budget items functionality moved to baby_items table
+-- This table is no longer needed
 
 CREATE TABLE IF NOT EXISTS baby_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -77,6 +66,12 @@ CREATE TABLE IF NOT EXISTS baby_items (
     notes TEXT,
     purchased BOOLEAN DEFAULT false,
     priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
+    -- Budget integration fields
+    budget_category_id UUID REFERENCES budget_categories(id) ON DELETE SET NULL,
+    price DECIMAL(10, 2),
+    price_source TEXT,
+    starred BOOLEAN DEFAULT false,
+    links JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -142,7 +137,6 @@ CREATE TABLE IF NOT EXISTS baby_name_votes (
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budget_categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE budget_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE baby_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wishlist_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wishlist_shares ENABLE ROW LEVEL SECURITY;
@@ -176,10 +170,7 @@ CREATE POLICY "Family members can manage budget categories" ON budget_categories
     EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.family_id = budget_categories.family_id)
 );
 
--- Budget items
-CREATE POLICY "Family members can manage budget items" ON budget_items FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.family_id = budget_items.family_id)
-);
+-- Budget items functionality moved to baby_items table
 
 -- Baby items
 CREATE POLICY "Family members can manage baby items" ON baby_items FOR ALL USING (
@@ -246,13 +237,13 @@ $$ language 'plpgsql';
 
 -- Create updated_at triggers
 DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
-DROP TRIGGER IF EXISTS update_budget_items_updated_at ON budget_items;
+-- Budget items table removed
 DROP TRIGGER IF EXISTS update_baby_items_updated_at ON baby_items;
 DROP TRIGGER IF EXISTS update_wishlist_items_updated_at ON wishlist_items;
 DROP TRIGGER IF EXISTS update_hospital_bag_items_updated_at ON hospital_bag_items;
 
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-CREATE TRIGGER update_budget_items_updated_at BEFORE UPDATE ON budget_items FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+-- Budget items table removed
 CREATE TRIGGER update_baby_items_updated_at BEFORE UPDATE ON baby_items FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_wishlist_items_updated_at BEFORE UPDATE ON wishlist_items FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_hospital_bag_items_updated_at BEFORE UPDATE ON hospital_bag_items FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

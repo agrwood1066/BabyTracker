@@ -24,7 +24,7 @@ const Navigation = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/budget', icon: DollarSign, label: 'Budget' },
-    { path: '/items', icon: ShoppingCart, label: 'Baby Items' },
+    { path: '/shopping-list', icon: ShoppingCart, label: 'Shopping List' },
     { path: '/wishlist', icon: Gift, label: 'Wishlist' },
     { path: '/hospital-bag', icon: Briefcase, label: 'Hospital Bag' },
     { path: '/names', icon: Heart, label: 'Baby Names' },
