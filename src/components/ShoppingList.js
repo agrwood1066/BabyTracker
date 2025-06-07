@@ -1,62 +1,4 @@
-  async function editItem(item) {
-    setEditingItem(item);
-    setNewItem({
-      item_name: item.item_name,
-      quantity: item.quantity,
-      notes: item.notes || '',
-      priority: item.priority,
-      budget_category_id: item.budget_category_id || '',
-      price: item.price || '',
-      price_source: item.price_source || '',
-      starred: item.starred,
-      needed_by: item.needed_by || '',
-      links: item.links ? JSON.parse(item.links) : [{ url: '', price: '', source: '' }]
-    });
-    setShowEditItem(true);
-  }
-
-  async function updateItem() {
-    if (!newItem.item_name || !editingItem) return;
-
-    try {
-      const itemData = {
-        ...newItem,
-        price: parseFloat(newItem.price) || null,
-        links: JSON.stringify(newItem.links.filter(link => link.url))
-      };
-
-      // Remove empty budget_category_id
-      if (!itemData.budget_category_id) {
-        itemData.budget_category_id = null;
-      }
-
-      const { error } = await supabase
-        .from('baby_items')
-        .update(itemData)
-        .eq('id', editingItem.id);
-
-      if (error) throw error;
-
-      setNewItem({
-        item_name: '',
-        quantity: 1,
-        notes: '',
-        priority: 'medium',
-        budget_category_id: '',
-        price: '',
-        price_source: '',
-        starred: false,
-        needed_by: '',
-        links: [{ url: '', price: '', source: '' }]
-      });
-      setShowEditItem(false);
-      setEditingItem(null);
-      fetchItems();
-    } catch (error) {
-      console.error('Error updating item:', error);
-      alert('Error updating item');
-    }
-  }import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Edit2 } from 'lucide-react';
 import './ShoppingList.css';
@@ -70,6 +12,7 @@ function ShoppingList() {
   const [editingItem, setEditingItem] = useState(null);
   const [shoppingMode, setShoppingMode] = useState(false);
   const [filterPriority, setFilterPriority] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [filterBudgetCategory, setFilterBudgetCategory] = useState('all');
   const [filterNeededBy, setFilterNeededBy] = useState('all');
   const [selectedItems, setSelectedItems] = useState(new Set());
@@ -80,6 +23,7 @@ function ShoppingList() {
     quantity: 1,
     notes: '',
     priority: 'medium',
+    category: '',
     budget_category_id: '',
     price: '',
     price_source: '',
@@ -87,6 +31,12 @@ function ShoppingList() {
     needed_by: '',
     links: [{ url: '', price: '', source: '' }]
   });
+
+  // Item categories
+  const itemCategories = [
+    'Feeding', 'Sleeping', 'Clothing', 'Safety', 'Transport', 'Bath Time', 
+    'Nursery', 'Toys & Play', 'Health & Care', 'Other'
+  ];
 
   // Needed By options
   const neededByOptions = [
@@ -161,7 +111,7 @@ function ShoppingList() {
   }
 
   async function addItem() {
-    if (!newItem.item_name) return;
+    if (!newItem.item_name || !newItem.category) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -195,6 +145,7 @@ function ShoppingList() {
         quantity: 1,
         notes: '',
         priority: 'medium',
+        category: '',
         budget_category_id: '',
         price: '',
         price_source: '',
@@ -207,6 +158,68 @@ function ShoppingList() {
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item');
+    }
+  }
+
+  async function editItem(item) {
+    setEditingItem(item);
+    setNewItem({
+      item_name: item.item_name,
+      quantity: item.quantity,
+      notes: item.notes || '',
+      priority: item.priority,
+      category: item.category || '',
+      budget_category_id: item.budget_category_id || '',
+      price: item.price || '',
+      price_source: item.price_source || '',
+      starred: item.starred,
+      needed_by: item.needed_by || '',
+      links: item.links ? JSON.parse(item.links) : [{ url: '', price: '', source: '' }]
+    });
+    setShowEditItem(true);
+  }
+
+  async function updateItem() {
+    if (!newItem.item_name || !editingItem) return;
+
+    try {
+      const itemData = {
+        ...newItem,
+        price: parseFloat(newItem.price) || null,
+        links: JSON.stringify(newItem.links.filter(link => link.url))
+      };
+
+      // Remove empty budget_category_id
+      if (!itemData.budget_category_id) {
+        itemData.budget_category_id = null;
+      }
+
+      const { error } = await supabase
+        .from('baby_items')
+        .update(itemData)
+        .eq('id', editingItem.id);
+
+      if (error) throw error;
+
+      setNewItem({
+        item_name: '',
+        quantity: 1,
+        notes: '',
+        priority: 'medium',
+        category: '',
+        budget_category_id: '',
+        price: '',
+        price_source: '',
+        starred: false,
+        needed_by: '',
+        links: [{ url: '', price: '', source: '' }]
+      });
+      setShowEditItem(false);
+      setEditingItem(null);
+      fetchItems();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item');
     }
   }
 
@@ -290,6 +303,7 @@ function ShoppingList() {
     if (filterCategory !== 'all' && item.category !== filterCategory) return false;
     if (filterPriority !== 'all' && item.priority !== filterPriority) return false;
     if (filterBudgetCategory !== 'all' && item.budget_category_id !== filterBudgetCategory) return false;
+    if (filterNeededBy !== 'all' && item.needed_by !== filterNeededBy) return false;
     return true;
   });
 
@@ -500,6 +514,18 @@ function ShoppingList() {
                   ))}
                 </select>
               </div>
+              <div className="filter-group">
+                <label>Needed By:</label>
+                <select 
+                  value={filterNeededBy} 
+                  onChange={(e) => setFilterNeededBy(e.target.value)}
+                >
+                  <option value="all">All Timeframes</option>
+                  {neededByOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {selectedItems.size > 0 && (
@@ -536,6 +562,7 @@ function ShoppingList() {
                 onToggleSelection={toggleItemSelection}
                 onTogglePurchased={togglePurchased}
                 onToggleStarred={toggleStarred}
+                onEdit={editItem}
                 onDelete={deleteItem}
                 getPriorityIcon={getPriorityIcon}
               />
@@ -556,11 +583,33 @@ function ShoppingList() {
           setNewItem={setNewItem}
           itemCategories={itemCategories}
           budgetCategories={budgetCategories}
+          neededByOptions={neededByOptions}
           onSave={addItem}
           onCancel={() => setShowAddItem(false)}
           addLink={addLink}
           updateLink={updateLink}
           removeLink={removeLink}
+          isEditing={false}
+        />
+      )}
+
+      {/* Edit Item Modal */}
+      {showEditItem && (
+        <AddItemModal
+          newItem={newItem}
+          setNewItem={setNewItem}
+          itemCategories={itemCategories}
+          budgetCategories={budgetCategories}
+          neededByOptions={neededByOptions}
+          onSave={updateItem}
+          onCancel={() => {
+            setShowEditItem(false);
+            setEditingItem(null);
+          }}
+          addLink={addLink}
+          updateLink={updateLink}
+          removeLink={removeLink}
+          isEditing={true}
         />
       )}
 
@@ -668,6 +717,7 @@ function ItemCard({
   onToggleSelection, 
   onTogglePurchased, 
   onToggleStarred, 
+  onEdit, 
   onDelete, 
   getPriorityIcon 
 }) {
@@ -696,6 +746,13 @@ function ItemCard({
             <Star size={20} fill={item.starred ? '#ffd700' : 'none'} />
           </button>
           <button 
+            className="icon-button edit"
+            onClick={() => onEdit(item)}
+            title="Edit item"
+          >
+            <Edit2 size={20} />
+          </button>
+          <button 
             className="icon-button check"
             onClick={() => onTogglePurchased(item)}
             title={item.purchased ? 'Mark as needed' : 'Mark as purchased'}
@@ -721,6 +778,11 @@ function ItemCard({
         {item.budget_categories && (
           <span className="budget-category-tag">
             {item.budget_categories.name}
+          </span>
+        )}
+        {item.needed_by && (
+          <span className="needed-by-tag">
+            Needed by: {item.needed_by}
           </span>
         )}
       </div>
@@ -779,16 +841,18 @@ function AddItemModal({
   setNewItem, 
   itemCategories, 
   budgetCategories, 
+  neededByOptions,
   onSave, 
   onCancel,
   addLink,
   updateLink,
-  removeLink
+  removeLink,
+  isEditing
 }) {
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Add Shopping List Item</h2>
+        <h2>{isEditing ? 'Edit Shopping List Item' : 'Add Shopping List Item'}</h2>
         
         <div className="form-group">
           <label>Item Name *</label>
@@ -796,204 +860,6 @@ function AddItemModal({
             type="text"
             value={newItem.item_name}
             onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
-            placeholder="e.g., Newborn onesies"
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Budget Category</label>
-            <select
-              value={newItem.budget_category_id}
-              onChange={(e) => setNewItem({ ...newItem, budget_category_id: e.target.value })}
-            >
-              <option value="">Select budget category</option>
-              {budgetCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Needed By</label>
-            <select
-              value={newItem.needed_by}
-              onChange={(e) => setNewItem({ ...newItem, needed_by: e.target.value })}
-            >
-              <option value="">Select timeframe</option>
-              {neededByOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Quantity</label>
-            <input
-              type="number"
-              min="1"
-              value={newItem.quantity}
-              onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Priority</label>
-            <select
-              value={newItem.priority}
-              onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Price</label>
-            <input
-              type="number"
-              value={newItem.price}
-              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-              placeholder="0.00"
-              step="0.01"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Price Source</label>
-            <input
-              type="text"
-              value={newItem.price_source}
-              onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
-              placeholder="e.g., John Lewis"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Notes</label>
-          <textarea
-            value={newItem.notes}
-            onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
-            placeholder="Any additional notes..."
-            rows="3"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Links & Alternative Prices</label>
-          {newItem.links.map((link, index) => (
-            <div key={index} className="link-input-group">
-              <input
-                type="url"
-                value={link.url}
-                onChange={(e) => updateLink(index, 'url', e.target.value)}
-                placeholder="https://..."
-              />
-              <input
-                type="text"
-                value={link.source}
-                onChange={(e) => updateLink(index, 'source', e.target.value)}
-                placeholder="Source name"
-              />
-              <input
-                type="number"
-                value={link.price}
-                onChange={(e) => updateLink(index, 'price', e.target.value)}
-                placeholder="Price"
-                step="0.01"
-              />
-              {newItem.links.length > 1 && (
-                <button 
-                  type="button"
-                  className="remove-link-button"
-                  onClick={() => removeLink(index)}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <button 
-            type="button"
-            className="add-link-button"
-            onClick={addLink}
-          >
-            + Add Another Link
-          </button>
-        </div>
-
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={newItem.starred}
-              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-            />
-            Star this item
-          </label>
-        </div>
-
-        <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave}>
-            {isEditing ? 'Update Item' : 'Add Item'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Bulk Assign Modal Component
-function BulkAssignModal({ 
-  budgetCategories, 
-  bulkCategory, 
-  setBulkCategory, 
-  onSave, 
-  onCancel, 
-  selectedCount 
-}) {
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
-        <h2>Assign Budget Category</h2>
-        <p>Assign budget category to {selectedCount} selected item{selectedCount > 1 ? 's' : ''}</p>
-        
-        <div className="form-group">
-          <label>Budget Category</label>
-          <select
-            value={bulkCategory}
-            onChange={(e) => setBulkCategory(e.target.value)}
-          >
-            <option value="">Select budget category</option>
-            {budgetCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave} disabled={!bulkCategory}>
-            Assign Category
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default ShoppingList;
             placeholder="e.g., Newborn onesies"
           />
         </div>
@@ -1156,181 +1022,6 @@ export default ShoppingList;
           </button>
           <button className="save-button" onClick={onSave}>
             {isEditing ? 'Update Item' : 'Add Item'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Bulk Assign Modal Component
-function BulkAssignModal({ 
-  budgetCategories, 
-  bulkCategory, 
-  setBulkCategory, 
-  onSave, 
-  onCancel, 
-  selectedCount 
-}) {
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
-        <h2>Assign Budget Category</h2>
-        <p>Assign budget category to {selectedCount} selected item{selectedCount > 1 ? 's' : ''}</p>
-        
-        <div className="form-group">
-          <label>Budget Category</label>
-          <select
-            value={bulkCategory}
-            onChange={(e) => setBulkCategory(e.target.value)}
-          >
-            <option value="">Select budget category</option>
-            {budgetCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave} disabled={!bulkCategory}>
-            Assign Category
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default ShoppingList;id: e.target.value })}
-            >
-              <option value="">Select budget category</option>
-              {budgetCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Quantity</label>
-            <input
-              type="number"
-              min="1"
-              value={newItem.quantity}
-              onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Priority</label>
-            <select
-              value={newItem.priority}
-              onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Price</label>
-            <input
-              type="number"
-              value={newItem.price}
-              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-              placeholder="0.00"
-              step="0.01"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Price Source</label>
-            <input
-              type="text"
-              value={newItem.price_source}
-              onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
-              placeholder="e.g., John Lewis"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Notes</label>
-          <textarea
-            value={newItem.notes}
-            onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
-            placeholder="Any additional notes..."
-            rows="3"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Links & Alternative Prices</label>
-          {newItem.links.map((link, index) => (
-            <div key={index} className="link-input-group">
-              <input
-                type="url"
-                value={link.url}
-                onChange={(e) => updateLink(index, 'url', e.target.value)}
-                placeholder="https://..."
-              />
-              <input
-                type="text"
-                value={link.source}
-                onChange={(e) => updateLink(index, 'source', e.target.value)}
-                placeholder="Source name"
-              />
-              <input
-                type="number"
-                value={link.price}
-                onChange={(e) => updateLink(index, 'price', e.target.value)}
-                placeholder="Price"
-                step="0.01"
-              />
-              {newItem.links.length > 1 && (
-                <button 
-                  type="button"
-                  className="remove-link-button"
-                  onClick={() => removeLink(index)}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <button 
-            type="button"
-            className="add-link-button"
-            onClick={addLink}
-          >
-            + Add Another Link
-          </button>
-        </div>
-
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={newItem.starred}
-              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-            />
-            Star this item
-          </label>
-        </div>
-
-        <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave}>
-            Add Item
           </button>
         </div>
       </div>
