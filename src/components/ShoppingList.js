@@ -12,7 +12,6 @@ function ShoppingList() {
   const [editingItem, setEditingItem] = useState(null);
   const [shoppingMode, setShoppingMode] = useState(false);
   const [filterPriority, setFilterPriority] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
   const [filterBudgetCategory, setFilterBudgetCategory] = useState('all');
   const [filterNeededBy, setFilterNeededBy] = useState('all');
   const [selectedItems, setSelectedItems] = useState(new Set());
@@ -23,7 +22,6 @@ function ShoppingList() {
     quantity: 1,
     notes: '',
     priority: 'medium',
-    category: '',
     budget_category_id: '',
     price: '',
     price_source: '',
@@ -31,12 +29,6 @@ function ShoppingList() {
     needed_by: '',
     links: [{ url: '', price: '', source: '' }]
   });
-
-  // Item categories
-  const itemCategories = [
-    'Feeding', 'Sleeping', 'Clothing', 'Safety', 'Transport', 'Bath Time', 
-    'Nursery', 'Toys & Play', 'Health & Care', 'Other'
-  ];
 
   // Needed By options
   const neededByOptions = [
@@ -109,7 +101,7 @@ function ShoppingList() {
   }
 
   async function addItem() {
-    if (!newItem.item_name || !newItem.category) return;
+    if (!newItem.item_name) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -143,7 +135,6 @@ function ShoppingList() {
         quantity: 1,
         notes: '',
         priority: 'medium',
-        category: '',
         budget_category_id: '',
         price: '',
         price_source: '',
@@ -166,7 +157,6 @@ function ShoppingList() {
       quantity: item.quantity,
       notes: item.notes || '',
       priority: item.priority,
-      category: item.category || '',
       budget_category_id: item.budget_category_id || '',
       price: item.price || '',
       price_source: item.price_source || '',
@@ -178,7 +168,7 @@ function ShoppingList() {
   }
 
   async function updateItem() {
-    if (!newItem.item_name || !editingItem || !newItem.category) return;
+    if (!newItem.item_name || !editingItem) return;
 
     try {
       const itemData = {
@@ -186,7 +176,6 @@ function ShoppingList() {
         quantity: newItem.quantity,
         notes: newItem.notes || '',
         priority: newItem.priority,
-        category: newItem.category,
         budget_category_id: newItem.budget_category_id || null,
         price: parseFloat(newItem.price) || null,
         price_source: newItem.price_source || '',
@@ -210,7 +199,6 @@ function ShoppingList() {
         quantity: 1,
         notes: '',
         priority: 'medium',
-        category: '',
         budget_category_id: '',
         price: '',
         price_source: '',
@@ -304,7 +292,6 @@ function ShoppingList() {
   };
 
   const filteredItems = items.filter(item => {
-    if (filterCategory !== 'all' && item.category !== filterCategory) return false;
     if (filterPriority !== 'all' && item.priority !== filterPriority) return false;
     if (filterBudgetCategory !== 'all' && item.budget_category_id !== filterBudgetCategory) return false;
     if (filterNeededBy !== 'all' && item.needed_by !== filterNeededBy) return false;
@@ -483,18 +470,6 @@ function ShoppingList() {
           <div className="filters-section">
             <div className="filters">
               <div className="filter-group">
-                <label>Item Category:</label>
-                <select 
-                  value={filterCategory} 
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                >
-                  <option value="all">All Categories</option>
-                  {itemCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-group">
                 <label>Priority:</label>
                 <select 
                   value={filterPriority} 
@@ -585,7 +560,6 @@ function ShoppingList() {
         <AddItemModal
           newItem={newItem}
           setNewItem={setNewItem}
-          itemCategories={itemCategories}
           budgetCategories={budgetCategories}
           neededByOptions={neededByOptions}
           onSave={addItem}
@@ -602,7 +576,6 @@ function ShoppingList() {
         <AddItemModal
           newItem={newItem}
           setNewItem={setNewItem}
-          itemCategories={itemCategories}
           budgetCategories={budgetCategories}
           neededByOptions={neededByOptions}
           onSave={updateItem}
@@ -777,7 +750,6 @@ function ItemCard({
       </div>
       
       <div className="item-details">
-        <span className="category-tag">{item.category}</span>
         <span className="quantity">Qty: {item.quantity}</span>
         <span className={`priority-tag ${item.priority}`}>
           {item.priority} priority
@@ -846,7 +818,6 @@ function ItemCard({
 function AddItemModal({ 
   newItem, 
   setNewItem, 
-  itemCategories, 
   budgetCategories, 
   neededByOptions,
   onSave, 
@@ -872,19 +843,6 @@ function AddItemModal({
         </div>
 
         <div className="form-row">
-          <div className="form-group">
-            <label>Item Category *</label>
-            <select
-              value={newItem.category}
-              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-            >
-              <option value="">Select item category</option>
-              {itemCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-          
           <div className="form-group">
             <label>Budget Category</label>
             <select
