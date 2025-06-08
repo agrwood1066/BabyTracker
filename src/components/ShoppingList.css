@@ -1,3 +1,214 @@
+/* Search Section */
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-bar {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.clear-search {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search:hover {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+/* Budget Bar Chart */
+.budget-bar-chart {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.budget-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.4rem;
+}
+
+.budget-amounts {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.budget-bar-container {
+  margin-bottom: 1rem;
+}
+
+.budget-bar-track {
+  position: relative;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.budget-bar-segment {
+  position: absolute;
+  height: 100%;
+  border-radius: 10px;
+  transition: all 0.4s ease;
+}
+
+.budget-bar-segment.spent {
+  background: linear-gradient(90deg, #4CAF50, #45a049);
+  z-index: 2;
+}
+
+.budget-bar-segment.pending {
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  z-index: 1;
+}
+
+.budget-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  font-size: 0.9rem;
+}
+
+.budget-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-color.spent {
+  background-color: #4CAF50;
+}
+
+.legend-color.pending {
+  background-color: #ff9800;
+}
+
+.legend-color.remaining {
+  background-color: #f0f0f0;
+}
+
+/* Collapsible Category Progress */
+.category-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.category-progress-header:hover {
+  background-color: #f9f9f9;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border-bottom: 1px solid transparent;
+  margin-bottom: 1rem;
+}
+
+.category-progress-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.toggle-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Shopping Mode Improvements */
+.shopping-item.purchased {
+  background-color: #f0f8f0;
+  border-left: 4px solid #4CAF50;
+}
+
+.shopping-item.purchased h4 {
+  color: #4CAF50;
+  text-decoration: line-through;
+}
+
+.purchased-label {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.checkbox.checked {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+/* Item Card Purchased State */
+.icon-button.check.purchased {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.icon-button.check.purchased:hover {
+  background-color: #45a049;
+}
+
 /* Shopping Mode Budget Bar */
 .shopping-mode-budget-bar {
   background: white;
@@ -928,6 +1139,29 @@
   
   .header-actions {
     justify-content: space-between;
+  }
+  
+  .search-bar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .budget-bar-chart {
+    padding: 1.5rem;
+  }
+  
+  .budget-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .budget-legend {
+    gap: 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .category-progress-header {
+    padding: 0.75rem 0;
   }
   
   .budget-overview {

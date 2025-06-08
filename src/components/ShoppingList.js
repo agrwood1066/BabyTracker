@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Edit2 } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Edit2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
@@ -17,6 +17,8 @@ function ShoppingList() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showBudgetProgress, setShowBudgetProgress] = useState(true);
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -292,6 +294,12 @@ function ShoppingList() {
   };
 
   const filteredItems = items.filter(item => {
+    // Search filter
+    if (searchTerm && !item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !(item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()))) {
+      return false;
+    }
+    // Other filters
     if (filterPriority !== 'all' && item.priority !== filterPriority) return false;
     if (filterBudgetCategory !== 'all' && item.budget_category_id !== filterBudgetCategory) return false;
     if (filterNeededBy !== 'all' && item.needed_by !== filterNeededBy) return false;
@@ -374,35 +382,65 @@ function ShoppingList() {
         </div>
       </div>
 
-      {/* Budget Summary */}
-      <div className="budget-overview">
-        <div className="budget-stat">
-          <Target size={24} color="#9fd3c7" />
-          <div>
-            <h3>£{totalBudget.toFixed(2)}</h3>
-            <p>Total Budget</p>
+      {/* Search Bar */}
+      <div className="search-section">
+        <div className="search-bar">
+          <Search size={20} />
+          <input
+            type="text"
+            placeholder="Search items by name or notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button 
+              className="clear-search"
+              onClick={() => setSearchTerm('')}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Budget Overview Bar Chart */}
+      <div className="budget-bar-chart">
+        <div className="budget-header">
+          <h3>Budget Overview</h3>
+          <div className="budget-amounts">
+            <span>£{totalSpent.toFixed(2)} spent of £{totalBudget.toFixed(2)} total</span>
           </div>
         </div>
-        <div className="budget-stat">
-          <Check size={24} color="#4CAF50" />
-          <div>
-            <h3>£{totalSpent.toFixed(2)}</h3>
-            <p>Spent</p>
+        <div className="budget-bar-container">
+          <div className="budget-bar-track">
+            <div 
+              className="budget-bar-segment spent"
+              style={{ width: `${totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0}%` }}
+              title={`Spent: £${totalSpent.toFixed(2)}`}
+            />
+            <div 
+              className="budget-bar-segment pending"
+              style={{ 
+                width: `${totalBudget > 0 ? (totalPending / totalBudget) * 100 : 0}%`,
+                left: `${totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0}%`
+              }}
+              title={`Pending: £${totalPending.toFixed(2)}`}
+            />
           </div>
         </div>
-        <div className="budget-stat">
-          <DollarSign size={24} color="#ff9800" />
-          <div>
-            <h3>£{totalPending.toFixed(2)}</h3>
-            <p>Pending</p>
+        <div className="budget-legend">
+          <div className="legend-item">
+            <div className="legend-color spent"></div>
+            <span>Spent: £{totalSpent.toFixed(2)}</span>
           </div>
-        </div>
-        <div className="budget-stat">
-          <div>
-            <h3 className={totalBudget - totalSpent - totalPending >= 0 ? 'positive' : 'negative'}>
-              £{(totalBudget - totalSpent - totalPending).toFixed(2)}
-            </h3>
-            <p>Remaining</p>
+          <div className="legend-item">
+            <div className="legend-color pending"></div>
+            <span>Pending: £{totalPending.toFixed(2)}</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color remaining"></div>
+            <span>Remaining: £{(totalBudget - totalSpent - totalPending).toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -410,41 +448,51 @@ function ShoppingList() {
       {/* Category Progress Bars - Hidden in Shopping Mode */}
       {!shoppingMode && budgetSummary.length > 0 && (
         <div className="category-progress-section">
-          <h3>Budget Progress by Category</h3>
-          <div className="progress-grid">
-            {budgetSummary.map(cat => (
-              <div key={cat.id} className="progress-card">
-                <div className="progress-header">
-                  <h4>{cat.name}</h4>
-                  <span className="progress-amounts">
-                    £{cat.spent.toFixed(2)} / £{cat.expected_budget?.toFixed(2) || '0.00'}
-                  </span>
-                </div>
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar spent"
-                    style={{
-                      width: `${Math.min((cat.spent / (cat.expected_budget || 1)) * 100, 100)}%`
-                    }}
-                  />
-                  <div 
-                    className="progress-bar pending"
-                    style={{
-                      width: `${Math.min((cat.pending / (cat.expected_budget || 1)) * 100, 100)}%`,
-                      left: `${Math.min((cat.spent / (cat.expected_budget || 1)) * 100, 100)}%`
-                    }}
-                  />
-                </div>
-                <div className="progress-legend">
-                  <span className="legend-item spent">Spent: £{cat.spent.toFixed(2)}</span>
-                  <span className="legend-item pending">Pending: £{cat.pending.toFixed(2)}</span>
-                  <span className="legend-item remaining">
-                    Remaining: £{cat.remaining.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div 
+            className="category-progress-header"
+            onClick={() => setShowBudgetProgress(!showBudgetProgress)}
+          >
+            <h3>Budget Progress by Category</h3>
+            <button className="toggle-button">
+              {showBudgetProgress ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
           </div>
+          {showBudgetProgress && (
+            <div className="progress-grid">
+              {budgetSummary.map(cat => (
+                <div key={cat.id} className="progress-card">
+                  <div className="progress-header">
+                    <h4>{cat.name}</h4>
+                    <span className="progress-amounts">
+                      £{cat.spent.toFixed(2)} / £{cat.expected_budget?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div 
+                      className="progress-bar spent"
+                      style={{
+                        width: `${Math.min((cat.spent / (cat.expected_budget || 1)) * 100, 100)}%`
+                      }}
+                    />
+                    <div 
+                      className="progress-bar pending"
+                      style={{
+                        width: `${Math.min((cat.pending / (cat.expected_budget || 1)) * 100, 100)}%`,
+                        left: `${Math.min((cat.spent / (cat.expected_budget || 1)) * 100, 100)}%`
+                      }}
+                    />
+                  </div>
+                  <div className="progress-legend">
+                    <span className="legend-item spent">Spent: £{cat.spent.toFixed(2)}</span>
+                    <span className="legend-item pending">Pending: £{cat.pending.toFixed(2)}</span>
+                    <span className="legend-item remaining">
+                      Remaining: £{cat.remaining.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
