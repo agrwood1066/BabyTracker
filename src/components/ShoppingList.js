@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, DollarSign, Target, Edit2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
