@@ -91,7 +91,7 @@ function Wishlist() {
         .single();
 
       // First, create the item in baby_items (Shopping List)
-      const { data: babyItem, error: babyItemError } = await supabase
+      const { error: babyItemError } = await supabase
         .from('baby_items')
         .insert({
           item_name: newItem.item_name,
@@ -108,9 +108,7 @@ function Wishlist() {
           }]) : null,
           family_id: profile.family_id,
           added_by: user.id
-        })
-        .select()
-        .single();
+        });
 
       if (babyItemError) throw babyItemError;
 
