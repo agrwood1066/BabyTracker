@@ -9,16 +9,30 @@ function Wishlist() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [budgetCategories, setBudgetCategories] = useState([]);
   const [newItem, setNewItem] = useState({
     item_name: '',
-    description: '',
-    link: '',
-    price: ''
+    quantity: 1,
+    notes: '',
+    priority: 'medium',
+    budget_category_id: '',
+    price: '',
+    price_source: '',
+    starred: false,
+    needed_by: '',
+    links: [{ url: '', price: '', source: '' }]
   });
+
+  // Needed By options
+  const neededByOptions = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   useEffect(() => {
     fetchItems();
     checkShareLink();
+    fetchBudgetCategories();
   }, []);
 
   async function fetchItems() {
@@ -53,6 +67,29 @@ function Wishlist() {
       console.error('Error fetching items:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchBudgetCategories() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      const { data, error } = await supabase
+        .from('budget_categories')
+        .select('*')
+        .eq('family_id', profile.family_id)
+        .order('name');
+
+      if (!error) {
+        setBudgetCategories(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching budget categories:', error);
     }
   }
 
@@ -95,17 +132,15 @@ function Wishlist() {
         .from('baby_items')
         .insert({
           item_name: newItem.item_name,
-          quantity: 1,
-          notes: newItem.description || '',
-          priority: 'medium',
+          quantity: newItem.quantity,
+          notes: newItem.notes || '',
+          priority: newItem.priority,
+          budget_category_id: newItem.budget_category_id || null,
           price: parseFloat(newItem.price) || null,
-          price_source: newItem.link ? 'Wishlist Link' : null,
-          starred: false, // Don't auto-star, let wishlist detection handle visual indicators
-          links: newItem.link ? JSON.stringify([{
-            url: newItem.link,
-            source: 'Wishlist Link',
-            price: newItem.price || ''
-          }]) : null,
+          price_source: newItem.price_source || null,
+          starred: newItem.starred,
+          needed_by: newItem.needed_by || null,
+          links: JSON.stringify(newItem.links.filter(link => link.url)),
           family_id: profile.family_id,
           added_by: user.id
         });
@@ -116,7 +151,16 @@ function Wishlist() {
       const { error: wishlistError } = await supabase
         .from('wishlist_items')
         .insert({
-          ...newItem,
+          item_name: newItem.item_name,
+          description: newItem.notes || '',
+          link: (() => {
+            try {
+              const links = newItem.links.filter(link => link.url);
+              return links.length > 0 ? links[0].url : '';
+            } catch {
+              return '';
+            }
+          })(),
           price: parseFloat(newItem.price) || null,
           family_id: profile.family_id,
           added_by: user.id,
@@ -127,9 +171,15 @@ function Wishlist() {
 
       setNewItem({
         item_name: '',
-        description: '',
-        link: '',
-        price: ''
+        quantity: 1,
+        notes: '',
+        priority: 'medium',
+        budget_category_id: '',
+        price: '',
+        price_source: '',
+        starred: false,
+        needed_by: '',
+        links: [{ url: '', price: '', source: '' }]
       });
       setShowAddItem(false);
       fetchItems();
@@ -213,6 +263,26 @@ function Wishlist() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareLink);
     alert('Link copied to clipboard!');
+  };
+
+  // Helper functions for managing links
+  const addLink = () => {
+    setNewItem({
+      ...newItem,
+      links: [...newItem.links, { url: '', price: '', source: '' }]
+    });
+  };
+
+  const updateLink = (index, field, value) => {
+    const updatedLinks = newItem.links.map((link, i) => 
+      i === index ? { ...link, [field]: value } : link
+    );
+    setNewItem({ ...newItem, links: updatedLinks });
+  };
+
+  const removeLink = (index) => {
+    const updatedLinks = newItem.links.filter((_, i) => i !== index);
+    setNewItem({ ...newItem, links: updatedLinks });
   };
 
   const unpurchasedCount = items.filter(item => !item.purchased).length;
@@ -310,6 +380,7 @@ function Wishlist() {
         <div className="modal-overlay" onClick={() => setShowAddItem(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Add Wishlist Item</h2>
+            
             <div className="form-group">
               <label>Item Name *</label>
               <input
@@ -319,34 +390,146 @@ function Wishlist() {
                 placeholder="e.g., Baby Monitor"
               />
             </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Budget Category</label>
+                <select
+                  value={newItem.budget_category_id}
+                  onChange={(e) => setNewItem({ ...newItem, budget_category_id: e.target.value })}
+                >
+                  <option value="">Select budget category</option>
+                  {budgetCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label>Needed By</label>
+                <select
+                  value={newItem.needed_by}
+                  onChange={(e) => setNewItem({ ...newItem, needed_by: e.target.value })}
+                >
+                  <option value="">Select timeframe</option>
+                  {neededByOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={newItem.quantity}
+                  onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Priority</label>
+                <select
+                  value={newItem.priority}
+                  onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Price</label>
+                <input
+                  type="number"
+                  value={newItem.price}
+                  onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Price Source</label>
+                <input
+                  type="text"
+                  value={newItem.price_source}
+                  onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
+                  placeholder="e.g., John Lewis"
+                />
+              </div>
+            </div>
+
             <div className="form-group">
-              <label>Description</label>
+              <label>Notes</label>
               <textarea
-                value={newItem.description}
-                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                value={newItem.notes}
+                onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
                 placeholder="Add any details about colour, size, brand preferences..."
                 rows="3"
               />
             </div>
+
             <div className="form-group">
-              <label>Link to Item</label>
-              <input
-                type="url"
-                value={newItem.link}
-                onChange={(e) => setNewItem({ ...newItem, link: e.target.value })}
-                placeholder="https://..."
-              />
+              <label>Links & Alternative Prices</label>
+              {newItem.links.map((link, index) => (
+                <div key={index} className="link-input-group">
+                  <input
+                    type="url"
+                    value={link.url}
+                    onChange={(e) => updateLink(index, 'url', e.target.value)}
+                    placeholder="https://..."
+                  />
+                  <input
+                    type="text"
+                    value={link.source}
+                    onChange={(e) => updateLink(index, 'source', e.target.value)}
+                    placeholder="Source name"
+                  />
+                  <input
+                    type="number"
+                    value={link.price}
+                    onChange={(e) => updateLink(index, 'price', e.target.value)}
+                    placeholder="Price"
+                    step="0.01"
+                  />
+                  {newItem.links.length > 1 && (
+                    <button 
+                      type="button"
+                      className="remove-link-button"
+                      onClick={() => removeLink(index)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button 
+                type="button"
+                className="add-link-button"
+                onClick={addLink}
+              >
+                + Add Another Link
+              </button>
             </div>
-            <div className="form-group">
-              <label>Price (approximate)</label>
-              <input
-                type="number"
-                value={newItem.price}
-                onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                placeholder="0.00"
-                step="0.01"
-              />
+
+            <div className="form-group checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={newItem.starred}
+                  onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
+                />
+                Star this item
+              </label>
             </div>
+
             <div className="modal-actions">
               <button className="cancel-button" onClick={() => setShowAddItem(false)}>
                 Cancel

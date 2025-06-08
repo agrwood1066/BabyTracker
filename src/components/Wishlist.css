@@ -274,6 +274,12 @@
   margin-bottom: 1.5rem;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
@@ -282,6 +288,7 @@
 }
 
 .form-group input,
+.form-group select,
 .form-group textarea {
   width: 100%;
   padding: 0.75rem;
@@ -293,6 +300,58 @@
 
 .form-group textarea {
   resize: vertical;
+}
+
+.form-group.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-group.checkbox input {
+  width: auto;
+}
+
+.form-group.checkbox label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.link-input-group {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.add-link-button {
+  background-color: #e8d5e8;
+  color: #666;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.add-link-button:hover {
+  background-color: #d5c5d5;
+}
+
+.remove-link-button {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-actions {
@@ -412,5 +471,13 @@
   
   .share-link-input {
     font-size: 0.8rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .link-input-group {
+    grid-template-columns: 1fr;
   }
 }
