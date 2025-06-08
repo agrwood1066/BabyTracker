@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { Gift, Plus, ExternalLink, Share2, Check, Trash2 } from 'lucide-react';
 import './Wishlist.css';
@@ -45,6 +45,7 @@ function Wishlist() {
       
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]); // Only depend on length to avoid infinite loops
 
   async function fetchItems() {
