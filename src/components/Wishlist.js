@@ -90,7 +90,32 @@ function Wishlist() {
         .eq('id', user.id)
         .single();
 
-      const { error } = await supabase
+      // First, create the item in baby_items (Shopping List)
+      const { data: babyItem, error: babyItemError } = await supabase
+        .from('baby_items')
+        .insert({
+          item_name: newItem.item_name,
+          quantity: 1,
+          notes: newItem.description || '',
+          priority: 'medium',
+          price: parseFloat(newItem.price) || null,
+          price_source: newItem.link ? 'Wishlist Link' : null,
+          starred: false, // Don't auto-star, let wishlist detection handle visual indicators
+          links: newItem.link ? JSON.stringify([{
+            url: newItem.link,
+            source: 'Wishlist Link',
+            price: newItem.price || ''
+          }]) : null,
+          family_id: profile.family_id,
+          added_by: user.id
+        })
+        .select()
+        .single();
+
+      if (babyItemError) throw babyItemError;
+
+      // Then, create the item in wishlist_items (Wishlist)
+      const { error: wishlistError } = await supabase
         .from('wishlist_items')
         .insert({
           ...newItem,
@@ -100,7 +125,7 @@ function Wishlist() {
           is_public: true
         });
 
-      if (error) throw error;
+      if (wishlistError) throw wishlistError;
 
       setNewItem({
         item_name: '',
@@ -143,7 +168,7 @@ function Wishlist() {
   }
 
   async function deleteItem(id) {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    if (!window.confirm('Are you sure you want to remove this item from your wishlist?')) return;
 
     try {
       const { error } = await supabase
@@ -269,7 +294,7 @@ function Wishlist() {
                   onClick={() => deleteItem(item.id)}
                 >
                   <Trash2 size={16} />
-                  Delete
+                  Remove
                 </button>
               </div>
             </div>
