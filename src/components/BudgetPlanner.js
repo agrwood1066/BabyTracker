@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Plus, Star, Check, Edit2, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { CSVLink } from 'react-csv';
 import './BudgetPlanner.css';
 
@@ -109,36 +109,6 @@ function BudgetPlanner() {
     } catch (error) {
       console.error('Error adding category:', error);
       alert('Error adding category');
-    }
-  }
-
-
-
-  async function togglePurchased(item) {
-    try {
-      const { error } = await supabase
-        .from('baby_items')
-        .update({ purchased: !item.purchased })
-        .eq('id', item.id);
-
-      if (error) throw error;
-      fetchItems();
-    } catch (error) {
-      console.error('Error updating item:', error);
-    }
-  }
-
-  async function toggleStarred(item) {
-    try {
-      const { error } = await supabase
-        .from('baby_items')
-        .update({ starred: !item.starred })
-        .eq('id', item.id);
-
-      if (error) throw error;
-      fetchItems();
-    } catch (error) {
-      console.error('Error updating item:', error);
     }
   }
 
@@ -277,7 +247,7 @@ function BudgetPlanner() {
 
       {categories.length > 0 && (
         <div className="categories-section">
-          <h2>Category Budgets</h2>
+          <h2>Budget Categories</h2>
           <div className="categories-grid">
             {categories.map(cat => {
               const categoryItems = items.filter(item => item.budget_category_id === cat.id);
@@ -285,6 +255,8 @@ function BudgetPlanner() {
                 .filter(item => item.purchased)
                 .reduce((sum, item) => sum + (item.price || 0), 0);
               const purchasedItems = categoryItems.filter(item => item.purchased);
+              const remainingItems = categoryItems.filter(item => !item.purchased);
+              const allCategoryItems = [...purchasedItems, ...remainingItems]; // Show purchased first, then remaining
               const percentage = cat.expected_budget > 0 ? (categorySpent / cat.expected_budget) * 100 : 0;
               const isOverBudget = categorySpent > cat.expected_budget;
               
@@ -364,26 +336,36 @@ function BudgetPlanner() {
                         )}
                       </div>
                       
-                      {/* Purchased items dropdown */}
-                      {purchasedItems.length > 0 && (
+                      {/* Items dropdown - shows both purchased and remaining */}
+                      {allCategoryItems.length > 0 && (
                         <div className="purchased-dropdown">
                           <button 
                             className="dropdown-toggle"
                             onClick={() => setExpandedCategory(expandedCategory === cat.id ? null : cat.id)}
                           >
-                            <span>{purchasedItems.length} purchased item{purchasedItems.length !== 1 ? 's' : ''}</span>
+                            <span>
+                              {purchasedItems.length} purchased, {remainingItems.length} remaining 
+                              ({allCategoryItems.length} total)
+                            </span>
                             {expandedCategory === cat.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
                           
                           {expandedCategory === cat.id && (
                             <div className="purchased-items-list">
-                              {purchasedItems.map(item => (
-                                <div key={item.id} className="purchased-item">
-                                  <span className="item-name">{item.item_name}</span>
-                                  <span className="item-price">£{item.price?.toFixed(2) || '0.00'}</span>
-                                  {item.price_source && (
-                                    <span className="item-source">from {item.price_source}</span>
-                                  )}
+                              {allCategoryItems.map(item => (
+                                <div key={item.id} className={`category-item ${item.purchased ? 'purchased' : 'remaining'}`}>
+                                  <div className="item-info">
+                                    <span className="item-name">{item.item_name}</span>
+                                    <div className="item-details">
+                                      <span className="item-price">£{item.price?.toFixed(2) || '0.00'}</span>
+                                      {item.price_source && (
+                                        <span className="item-source">from {item.price_source}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className={`item-status ${item.purchased ? 'purchased' : 'remaining'}`}>
+                                    {item.purchased ? '✓ Purchased' : 'Needed'}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -398,93 +380,6 @@ function BudgetPlanner() {
           </div>
         </div>
       )}
-
-      <div className="items-section">
-        <div className="items-section-header">
-          <h2>Budget Item Details</h2>
-          <p className="items-section-description">
-            Detailed view of items from your <Link to="/shopping-list">Shopping List</Link> that have budget categories assigned.
-          </p>
-        </div>
-        {filteredItems.length > 0 ? (
-          <div className="items-list">
-            {filteredItems.map(item => (
-              <div key={item.id} className={`item-card ${item.purchased ? 'purchased' : ''}`}>
-                <div className="item-header">
-                  <h3>{item.item_name}</h3>
-                  <div className="item-actions">
-                    <button 
-                      className="icon-button star"
-                      onClick={() => toggleStarred(item)}
-                    >
-                      <Star size={16} fill={item.starred ? '#ffd700' : 'none'} />
-                    </button>
-                    <button 
-                      className="icon-button check"
-                      onClick={() => togglePurchased(item)}
-                    >
-                      <Check size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="item-details">
-                  <span className="category-tag">
-                    {item.budget_categories?.name || 'Uncategorised'}
-                  </span>
-                  <span className="price">£{item.price?.toFixed(2) || '0.00'}</span>
-                  {item.price_source && (
-                    <span className="price-source">from {item.price_source}</span>
-                  )}
-                </div>
-                {item.notes && (
-                  <div className="item-notes">
-                    <strong>Notes:</strong> {item.notes}
-                  </div>
-                )}
-                {item.links && (() => {
-                  try {
-                    return JSON.parse(item.links).length > 0;
-                  } catch {
-                    return false;
-                  }
-                })() && (
-                  <div className="item-links">
-                    <strong>Links:</strong>
-                    <div className="links-list">
-                      {(() => {
-                        try {
-                          return JSON.parse(item.links);
-                        } catch {
-                          return [];
-                        }
-                      })().map((link, index) => (
-                        <div key={index} className="link-item">
-                          <a href={link.url} target="_blank" rel="noopener noreferrer">
-                            {link.source || 'Link'}
-                          </a>
-                          {link.price && <span className="link-price">£{parseFloat(link.price).toFixed(2)}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="item-footer">
-                  <span className="added-by">
-                    Added by {item.profiles?.full_name || item.profiles?.email}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="no-items">
-            <p>No shopping list items with budget categories yet.</p>
-            <p><Link to="/shopping-list">Go to Shopping List</Link> to add items and assign them to budget categories.</p>
-          </div>
-        )}
-      </div>
-
-
 
       {showAddCategory && (
         <div className="modal-overlay" onClick={() => setShowAddCategory(false)}>
