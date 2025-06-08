@@ -1017,6 +1017,26 @@
   margin-left: 1rem;
 }
 
+.edit-button {
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #2196F3;
+}
+
+.edit-button:hover {
+  background: rgba(33, 150, 243, 0.2);
+  border-color: rgba(33, 150, 243, 0.5);
+  transform: scale(1.05);
+}
+
 .wishlist-button {
   background: rgba(217, 70, 239, 0.1);
   border: 1px solid rgba(217, 70, 239, 0.3);

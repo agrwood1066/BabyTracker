@@ -10,6 +10,7 @@ function Wishlist() {
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [budgetCategories, setBudgetCategories] = useState([]);
+  const [imageCache, setImageCache] = useState(new Map()); // Cache for link previews
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -34,6 +35,17 @@ function Wishlist() {
     checkShareLink();
     fetchBudgetCategories();
   }, []);
+
+  // Extract images when items change (only when new items are added)
+  useEffect(() => {
+    if (items.length > 0) {
+      const timer = setTimeout(() => {
+        extractImagesFromURLs();
+      }, 100); // Small delay to avoid excessive API calls
+      
+      return () => clearTimeout(timer);
+    }
+  }, [items.length]); // Only depend on length to avoid infinite loops
 
   async function fetchItems() {
     try {
@@ -69,6 +81,46 @@ function Wishlist() {
       setLoading(false);
     }
   }
+
+  async function extractImagesFromURLs() {
+    const newImageCache = new Map(imageCache);
+    
+    for (const item of items) {
+      if (item.link && !newImageCache.has(item.link)) {
+        try {
+          // Use LinkPreview.net API with environment variable
+          const apiKey = process.env.REACT_APP_LINKPREVIEW_API_KEY || 'demo';
+          const response = await fetch(
+            `https://api.linkpreview.net/?key=${apiKey}&q=${encodeURIComponent(item.link)}`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.image) {
+              newImageCache.set(item.link, data.image);
+            }
+          }
+        } catch (error) {
+          console.log('Could not extract image for:', item.link);
+          // Set null to avoid retrying
+          newImageCache.set(item.link, null);
+        }
+        
+        // Small delay to be respectful to the API
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    
+    setImageCache(newImageCache);
+  }
+
+  // Get image for an item (from cache or fallback)
+  const getItemImage = (item) => {
+    if (item.link && imageCache.has(item.link)) {
+      return imageCache.get(item.link);
+    }
+    return null;
+  };
 
   async function fetchBudgetCategories() {
     try {
@@ -325,48 +377,74 @@ function Wishlist() {
 
       <div className="wishlist-grid">
         {items.length > 0 ? (
-          items.map(item => (
-            <div key={item.id} className={`wishlist-item ${item.purchased ? 'purchased' : ''}`}>
-              <div className="item-header">
-                <h3>{item.item_name}</h3>
-                {item.price && <span className="price">£{item.price.toFixed(2)}</span>}
+          items.map(item => {
+            const itemImage = getItemImage(item);
+            return (
+              <div key={item.id} className={`wishlist-item ${item.purchased ? 'purchased' : ''}`}>
+                {/* Product Image */}
+                <div className="item-image-container">
+                  {itemImage ? (
+                    <img 
+                      src={itemImage} 
+                      alt={item.item_name}
+                      className="item-image"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="item-image-placeholder" 
+                    style={{ display: itemImage ? 'none' : 'flex' }}
+                  >
+                    <Gift size={32} color="#ddd" />
+                  </div>
+                </div>
+                
+                <div className="item-content">
+                  <div className="item-header">
+                    <h3>{item.item_name}</h3>
+                    {item.price && <span className="price">£{item.price.toFixed(2)}</span>}
+                  </div>
+                  {item.description && (
+                    <p className="item-description">{item.description}</p>
+                  )}
+                  {item.link && (
+                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="item-link">
+                      <ExternalLink size={16} /> View Item
+                    </a>
+                  )}
+                  <div className="item-footer">
+                    <span className="added-by">
+                      Added by {item.profiles?.full_name || item.profiles?.email}
+                    </span>
+                    {item.purchased && item.purchased_by && (
+                      <span className="purchased-by">
+                        Purchased by {item.purchased_by.full_name || item.purchased_by.email}
+                      </span>
+                    )}
+                  </div>
+                  <div className="item-actions">
+                    <button 
+                      className={`purchase-button ${item.purchased ? 'unpurchase' : ''}`}
+                      onClick={() => togglePurchased(item)}
+                    >
+                      <Check size={16} />
+                      {item.purchased ? 'Mark as Available' : 'Mark as Purchased'}
+                    </button>
+                    <button 
+                      className="delete-button"
+                      onClick={() => deleteItem(item.id)}
+                    >
+                      <Trash2 size={16} />
+                      Remove
+                    </button>
+                  </div>
+                </div>
               </div>
-              {item.description && (
-                <p className="item-description">{item.description}</p>
-              )}
-              {item.link && (
-                <a href={item.link} target="_blank" rel="noopener noreferrer" className="item-link">
-                  <ExternalLink size={16} /> View Item
-                </a>
-              )}
-              <div className="item-footer">
-                <span className="added-by">
-                  Added by {item.profiles?.full_name || item.profiles?.email}
-                </span>
-                {item.purchased && item.purchased_by && (
-                  <span className="purchased-by">
-                    Purchased by {item.purchased_by.full_name || item.purchased_by.email}
-                  </span>
-                )}
-              </div>
-              <div className="item-actions">
-                <button 
-                  className={`purchase-button ${item.purchased ? 'unpurchase' : ''}`}
-                  onClick={() => togglePurchased(item)}
-                >
-                  <Check size={16} />
-                  {item.purchased ? 'Mark as Available' : 'Mark as Purchased'}
-                </button>
-                <button 
-                  className="delete-button"
-                  onClick={() => deleteItem(item.id)}
-                >
-                  <Trash2 size={16} />
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="no-items">
             <Gift size={48} color="#ccc" />

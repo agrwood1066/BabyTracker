@@ -486,7 +486,7 @@ function ShoppingList() {
             onClick={() => setShoppingMode(!shoppingMode)}
           >
             {shoppingMode ? <Eye size={16} /> : <ShoppingCart size={16} />}
-            {shoppingMode ? 'Normal View' : 'Shopping Mode'}
+            {shoppingMode ? 'Detailed View' : 'Shopping Mode'}
           </button>
           <button className="add-button" onClick={() => setShowAddItem(true)}>
             <Plus size={16} /> Add Item
@@ -690,6 +690,7 @@ function ShoppingList() {
           wishlistItems={wishlistItems}
           addToWishlist={addToWishlist}
           removeFromWishlist={removeFromWishlist}
+          onEdit={editItem}
         />
       ) : (
         <div className="items-grid">
@@ -770,7 +771,7 @@ function ShoppingList() {
 }
 
 // Shopping Mode Component
-function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources, wishlistItems, addToWishlist, removeFromWishlist }) {
+function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources, wishlistItems, addToWishlist, removeFromWishlist, onEdit }) {
   let groupedItems = {};
 
   if (groupBy === 'source') {
@@ -920,6 +921,16 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                     </div>
                     
                     <div className="shopping-item-actions">
+                      <button 
+                        className="edit-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(item);
+                        }}
+                        title="Edit item"
+                      >
+                        <Edit2 size={18} />
+                      </button>
                       {isInWishlist ? (
                         <button 
                           className="wishlist-button added"
