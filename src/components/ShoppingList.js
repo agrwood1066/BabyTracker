@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
@@ -14,11 +14,13 @@ function ShoppingList() {
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterBudgetCategory, setFilterBudgetCategory] = useState('all');
   const [filterNeededBy, setFilterNeededBy] = useState('all');
+  const [filterPriceSource, setFilterPriceSource] = useState('all');
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showBudgetProgress, setShowBudgetProgress] = useState(true);
+  const [showBudgetProgress, setShowBudgetProgress] = useState(false);
+  const [shoppingGroupBy, setShoppingGroupBy] = useState('category'); // 'category' or 'source'
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -296,18 +298,17 @@ function ShoppingList() {
   const filteredItems = items.filter(item => {
     // Search filter
     if (searchTerm && !item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !(item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()))) {
+        !(item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        !(item.price_source && item.price_source.toLowerCase().includes(searchTerm.toLowerCase()))) {
       return false;
     }
     // Other filters
     if (filterPriority !== 'all' && item.priority !== filterPriority) return false;
     if (filterBudgetCategory !== 'all' && item.budget_category_id !== filterBudgetCategory) return false;
     if (filterNeededBy !== 'all' && item.needed_by !== filterNeededBy) return false;
+    if (filterPriceSource !== 'all' && item.price_source !== filterPriceSource) return false;
     return true;
   });
-
-  const itemsNeeded = filteredItems.filter(item => !item.purchased).length;
-  const itemsPurchased = filteredItems.filter(item => item.purchased).length;
 
   // Calculate budget summary for category progress bars
   const budgetSummary = budgetCategories.map(budgetCat => {
@@ -331,6 +332,9 @@ function ShoppingList() {
   const totalBudget = budgetCategories.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0);
   const totalSpent = budgetSummary.reduce((sum, cat) => sum + cat.spent, 0);
   const totalPending = budgetSummary.reduce((sum, cat) => sum + cat.pending, 0);
+
+  // Get unique price sources for filter
+  const uniquePriceSources = [...new Set(items.filter(item => item.price_source).map(item => item.price_source))].sort();
 
   // Helper functions for managing links
   const addLink = () => {
@@ -388,7 +392,7 @@ function ShoppingList() {
           <Search size={20} />
           <input
             type="text"
-            placeholder="Search items by name or notes..."
+            placeholder="Search items by name, notes, or price source..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -498,23 +502,6 @@ function ShoppingList() {
 
       {!shoppingMode && (
         <>
-          <div className="shopping-summary">
-            <div className="summary-stat">
-              <ShoppingCart size={24} color="#9fd3c7" />
-              <div>
-                <h3>{itemsNeeded}</h3>
-                <p>Items Needed</p>
-              </div>
-            </div>
-            <div className="summary-stat">
-              <Check size={24} color="#4CAF50" />
-              <div>
-                <h3>{itemsPurchased}</h3>
-                <p>Items Purchased</p>
-              </div>
-            </div>
-          </div>
-
           <div className="filters-section">
             <div className="filters">
               <div className="filter-group">
@@ -553,6 +540,18 @@ function ShoppingList() {
                   ))}
                 </select>
               </div>
+              <div className="filter-group">
+                <label>Price Source:</label>
+                <select 
+                  value={filterPriceSource} 
+                  onChange={(e) => setFilterPriceSource(e.target.value)}
+                >
+                  <option value="all">All Sources</option>
+                  {uniquePriceSources.map(source => (
+                    <option key={source} value={source}>{source}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {selectedItems.size > 0 && (
@@ -577,6 +576,9 @@ function ShoppingList() {
           budgetCategories={budgetCategories}
           togglePurchased={togglePurchased}
           budgetSummary={budgetSummary}
+          groupBy={shoppingGroupBy}
+          setGroupBy={setShoppingGroupBy}
+          uniquePriceSources={uniquePriceSources}
         />
       ) : (
         <div className="items-grid">
@@ -654,48 +656,82 @@ function ShoppingList() {
 }
 
 // Shopping Mode Component
-function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary }) {
-  const groupedItems = budgetCategories.reduce((acc, budgetCat) => {
-    const categoryItems = items.filter(item => 
-      item.budget_category_id === budgetCat.id
-    );
-    if (categoryItems.length > 0) {
-      acc[budgetCat.name] = categoryItems;
-    }
-    return acc;
-  }, {});
+function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources }) {
+  let groupedItems = {};
 
-  // Add uncategorised items
-  const uncategorisedItems = items.filter(item => 
-    !item.budget_category_id
-  );
-  if (uncategorisedItems.length > 0) {
-    groupedItems['Uncategorised'] = uncategorisedItems;
+  if (groupBy === 'source') {
+    // Group by price source
+    uniquePriceSources.forEach(source => {
+      const sourceItems = items.filter(item => item.price_source === source);
+      if (sourceItems.length > 0) {
+        groupedItems[source] = sourceItems;
+      }
+    });
+    
+    // Add items without price source
+    const noSourceItems = items.filter(item => !item.price_source);
+    if (noSourceItems.length > 0) {
+      groupedItems['No Price Source'] = noSourceItems;
+    }
+  } else {
+    // Group by budget category (default)
+    groupedItems = budgetCategories.reduce((acc, budgetCat) => {
+      const categoryItems = items.filter(item => 
+        item.budget_category_id === budgetCat.id
+      );
+      if (categoryItems.length > 0) {
+        acc[budgetCat.name] = categoryItems;
+      }
+      return acc;
+    }, {});
+
+    // Add uncategorised items
+    const uncategorisedItems = items.filter(item => 
+      !item.budget_category_id
+    );
+    if (uncategorisedItems.length > 0) {
+      groupedItems['Uncategorised'] = uncategorisedItems;
+    }
   }
 
   return (
     <div className="shopping-mode">
       <div className="shopping-mode-header">
-        <h2>Shopping Mode</h2>
-        <p>Tap items to mark as purchased/unpurchased</p>
+        <div className="shopping-mode-title">
+          <h2>Shopping Mode</h2>
+          <p>Tap items to mark as purchased/unpurchased</p>
+        </div>
+        <button 
+          className="group-toggle-button"
+          onClick={() => setGroupBy(groupBy === 'category' ? 'source' : 'category')}
+          title={`Group by ${groupBy === 'category' ? 'Price Source' : 'Category'}`}
+        >
+          <Tag size={20} />
+          {groupBy === 'category' ? 'By Store' : 'By Category'}
+        </button>
       </div>
 
-      {Object.entries(groupedItems).map(([categoryName, categoryItems]) => {
-        const budgetInfo = budgetSummary.find(cat => cat.name === categoryName);
+      {Object.entries(groupedItems).map(([groupName, groupItems]) => {
+        const budgetInfo = groupBy === 'category' ? budgetSummary.find(cat => cat.name === groupName) : null;
         
         return (
-          <div key={categoryName} className="shopping-category">
+          <div key={groupName} className="shopping-category">
             <div className="shopping-category-header">
-              <h3>{categoryName}</h3>
+              <h3>{groupName}</h3>
               {budgetInfo && (
                 <div className="category-budget-info">
                   <span>Remaining: £{budgetInfo.remaining.toFixed(2)}</span>
                 </div>
               )}
+              {groupBy === 'source' && (
+                <div className="category-budget-info">
+                  <span>{groupItems.length} item{groupItems.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
             </div>
             
             <div className="shopping-items-list">
-              {categoryItems.map(item => (
+              {groupItems.map(item => (
                 <div 
                   key={item.id} 
                   className={`shopping-item ${item.purchased ? 'purchased' : ''}`}
@@ -715,6 +751,40 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                         <span className="purchased-label">✓ Purchased</span>
                       )}
                     </div>
+                    
+                    {/* Display links if available */}
+                    {item.links && (() => {
+                      try {
+                        const links = JSON.parse(item.links);
+                        return links.length > 0;
+                      } catch {
+                        return false;
+                      }
+                    })() && (
+                      <div className="shopping-item-links">
+                        {(() => {
+                          try {
+                            return JSON.parse(item.links);
+                          } catch {
+                            return [];
+                          }
+                        })().map((link, index) => (
+                          <a 
+                            key={index}
+                            href={link.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="shopping-link"
+                            onClick={(e) => e.stopPropagation()} // Prevent triggering purchase toggle
+                          >
+                            <span className="link-source">{link.source || 'Link'}</span>
+                            {link.price && (
+                              <span className="link-price">£{parseFloat(link.price).toFixed(2)}</span>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="shopping-item-action">
                     <div className={`checkbox ${item.purchased ? 'checked' : ''}`}>
