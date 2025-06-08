@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp, Tag } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp, Tag, Gift } from 'lucide-react';
 import './ShoppingList.css';
 
 function ShoppingList() {
@@ -10,7 +10,7 @@ function ShoppingList() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showEditItem, setShowEditItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [shoppingMode, setShoppingMode] = useState(false);
+  const [shoppingMode, setShoppingMode] = useState(true);
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterBudgetCategory, setFilterBudgetCategory] = useState('all');
   const [filterNeededBy, setFilterNeededBy] = useState('all');
@@ -21,6 +21,7 @@ function ShoppingList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showBudgetProgress, setShowBudgetProgress] = useState(false);
   const [shoppingGroupBy, setShoppingGroupBy] = useState('category'); // 'category' or 'source'
+  const [wishlistItems, setWishlistItems] = useState(new Map()); // Map of item_id -> wishlist_status
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -43,6 +44,7 @@ function ShoppingList() {
   useEffect(() => {
     fetchBudgetCategories();
     fetchItems();
+    fetchWishlistStatus();
   }, []);
 
   async function fetchBudgetCategories() {
@@ -65,6 +67,112 @@ function ShoppingList() {
       }
     } catch (error) {
       console.error('Error fetching budget categories:', error);
+    }
+  }
+
+  async function fetchWishlistStatus() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      const { data, error } = await supabase
+        .from('wishlist_items')
+        .select('id, item_name, purchased')
+        .eq('family_id', profile.family_id);
+
+      if (!error && data) {
+        const wishlistMap = new Map();
+        data.forEach(item => {
+          // Find matching shopping list items by name (since wishlist items are copies)
+          wishlistMap.set(item.item_name.toLowerCase(), {
+            id: item.id,
+            purchased: item.purchased
+          });
+        });
+        setWishlistItems(wishlistMap);
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error);
+    }
+  }
+
+  async function addToWishlist(item) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      const wishlistData = {
+        family_id: profile.family_id,
+        added_by: user.id,
+        item_name: item.item_name,
+        description: item.notes || '',
+        link: (() => {
+          try {
+            const links = item.links ? JSON.parse(item.links) : [];
+            return links.length > 0 ? links[0].url : '';
+          } catch {
+            return '';
+          }
+        })(),
+        price: item.price || null,
+        purchased: false,
+        is_public: true
+      };
+
+      const { error } = await supabase
+        .from('wishlist_items')
+        .insert(wishlistData);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      const newWishlistItems = new Map(wishlistItems);
+      newWishlistItems.set(item.item_name.toLowerCase(), {
+        id: null, // Will be updated on next fetch
+        purchased: false
+      });
+      setWishlistItems(newWishlistItems);
+      
+      // Refresh wishlist status to get the actual ID
+      await fetchWishlistStatus();
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      alert('Error adding item to wishlist');
+    }
+  }
+
+  async function removeFromWishlist(item) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      const { error } = await supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('family_id', profile.family_id)
+        .eq('item_name', item.item_name);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      const newWishlistItems = new Map(wishlistItems);
+      newWishlistItems.delete(item.item_name.toLowerCase());
+      setWishlistItems(newWishlistItems);
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      alert('Error removing item from wishlist');
     }
   }
 
@@ -579,6 +687,9 @@ function ShoppingList() {
           groupBy={shoppingGroupBy}
           setGroupBy={setShoppingGroupBy}
           uniquePriceSources={uniquePriceSources}
+          wishlistItems={wishlistItems}
+          addToWishlist={addToWishlist}
+          removeFromWishlist={removeFromWishlist}
         />
       ) : (
         <div className="items-grid">
@@ -594,6 +705,9 @@ function ShoppingList() {
                 onEdit={editItem}
                 onDelete={deleteItem}
                 getPriorityIcon={getPriorityIcon}
+                wishlistItems={wishlistItems}
+                addToWishlist={addToWishlist}
+                removeFromWishlist={removeFromWishlist}
               />
             ))
           ) : (
@@ -656,7 +770,7 @@ function ShoppingList() {
 }
 
 // Shopping Mode Component
-function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources }) {
+function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources, wishlistItems, addToWishlist, removeFromWishlist }) {
   let groupedItems = {};
 
   if (groupBy === 'source') {
@@ -731,12 +845,24 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
             </div>
             
             <div className="shopping-items-list">
-              {groupItems.map(item => (
-                <div 
-                  key={item.id} 
-                  className={`shopping-item ${item.purchased ? 'purchased' : ''}`}
-                  onClick={() => togglePurchased(item)}
-                >
+              {groupItems.map(item => {
+                const wishlistStatus = wishlistItems.get(item.item_name.toLowerCase());
+                const isInWishlist = Boolean(wishlistStatus);
+                const isWishlistPurchased = wishlistStatus?.purchased || false;
+                
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`shopping-item ${
+                      item.purchased ? 'purchased' : ''
+                    } ${
+                      isInWishlist ? (isWishlistPurchased ? 'wishlist-purchased' : 'wishlist-added') : ''
+                    }`}
+                  >
+                    <div 
+                      className="shopping-item-main"
+                      onClick={() => togglePurchased(item)}
+                    >
                   <div className="shopping-item-content">
                     <h4>{item.item_name}</h4>
                     <div className="shopping-item-details">
@@ -749,6 +875,11 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                       )}
                       {item.purchased && (
                         <span className="purchased-label">✓ Purchased</span>
+                      )}
+                      {isInWishlist && (
+                        <span className={`wishlist-status ${isWishlistPurchased ? 'purchased' : 'added'}`}>
+                          {isWishlistPurchased ? '🎁 Gifted' : '🎁 In Wishlist'}
+                        </span>
                       )}
                     </div>
                     
@@ -786,13 +917,39 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                       </div>
                     )}
                   </div>
-                  <div className="shopping-item-action">
-                    <div className={`checkbox ${item.purchased ? 'checked' : ''}`}>
-                      {item.purchased && <Check size={16} />}
+                    </div>
+                    
+                    <div className="shopping-item-actions">
+                      {isInWishlist ? (
+                        <button 
+                          className="wishlist-button added"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromWishlist(item);
+                          }}
+                          title="Remove from Wishlist"
+                        >
+                          <Gift size={18} fill="currentColor" />
+                        </button>
+                      ) : (
+                        <button 
+                          className="wishlist-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToWishlist(item);
+                          }}
+                          title="Add to Wishlist"
+                        >
+                          <Gift size={18} />
+                        </button>
+                      )}
+                      <div className={`checkbox ${item.purchased ? 'checked' : ''}`}>
+                        {item.purchased && <Check size={16} />}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -817,10 +974,20 @@ function ItemCard({
   onToggleStarred, 
   onEdit, 
   onDelete, 
-  getPriorityIcon 
+  getPriorityIcon,
+  wishlistItems,
+  addToWishlist,
+  removeFromWishlist
 }) {
+  const wishlistStatus = wishlistItems.get(item.item_name.toLowerCase());
+  const isInWishlist = Boolean(wishlistStatus);
+  const isWishlistPurchased = wishlistStatus?.purchased || false;
   return (
-    <div className={`item-card ${item.purchased ? 'purchased' : ''}`}>
+    <div className={`item-card ${
+      item.purchased ? 'purchased' : ''
+    } ${
+      isInWishlist ? (isWishlistPurchased ? 'wishlist-purchased' : 'wishlist-added') : ''
+    }`}>
       <div className="item-header">
         <div className="item-title-row">
           <input
@@ -843,6 +1010,23 @@ function ItemCard({
           >
             <Star size={20} fill={item.starred ? '#ffd700' : 'none'} />
           </button>
+          {isInWishlist ? (
+            <button 
+              className="icon-button wishlist added"
+              onClick={() => removeFromWishlist(item)}
+              title="Remove from Wishlist"
+            >
+              <Gift size={20} fill="currentColor" />
+            </button>
+          ) : (
+            <button 
+              className="icon-button wishlist"
+              onClick={() => addToWishlist(item)}
+              title="Add to Wishlist"
+            >
+              <Gift size={20} />
+            </button>
+          )}
           <button 
             className="icon-button edit"
             onClick={() => onEdit(item)}
@@ -880,6 +1064,11 @@ function ItemCard({
         {item.needed_by && (
           <span className="needed-by-tag">
             Needed by: {item.needed_by}
+          </span>
+        )}
+        {isInWishlist && (
+          <span className={`wishlist-status-tag ${isWishlistPurchased ? 'purchased' : 'added'}`}>
+            {isWishlistPurchased ? '🎁 Gifted' : '🎁 In Wishlist'}
           </span>
         )}
       </div>

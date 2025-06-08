@@ -189,7 +189,7 @@ function Dashboard() {
           </div>
         </Link>
 
-        <Link to="/items" className="stat-card items">
+        <Link to="/shopping-list" className="stat-card items">
           <div className="stat-icon">
             <Package size={28} />
           </div>
