@@ -44,7 +44,7 @@ const Navigation = () => {
         <div className="nav-container">
           <Link to="/" className="nav-logo">
             <Baby size={32} />
-            <span>Simply Pregnancy</span>
+            <span>Baby Steps</span>
           </Link>
 
           <button
