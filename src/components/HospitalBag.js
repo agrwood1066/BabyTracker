@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Briefcase, Plus, Check, Trash2, Baby, UserCheck, Users } from 'lucide-react';
+import { Briefcase, Plus, Check, Trash2, Baby, UserCheck, Users, Edit2 } from 'lucide-react';
 import './HospitalBag.css';
 
 function HospitalBag() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [filterFor, setFilterFor] = useState('all');
   const [newItem, setNewItem] = useState({
     item_name: '',
@@ -116,6 +118,51 @@ function HospitalBag() {
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item');
+    }
+  }
+
+  async function editItem(item) {
+    setEditingItem(item);
+    setNewItem({
+      item_name: item.item_name,
+      for_whom: item.for_whom,
+      category: item.category,
+      quantity: item.quantity,
+      notes: item.notes || ''
+    });
+    setShowEditItem(true);
+  }
+
+  async function updateItem() {
+    if (!newItem.item_name || !newItem.category || !editingItem) return;
+
+    try {
+      const { error } = await supabase
+        .from('hospital_bag_items')
+        .update({
+          item_name: newItem.item_name,
+          for_whom: newItem.for_whom,
+          category: newItem.category,
+          quantity: newItem.quantity,
+          notes: newItem.notes
+        })
+        .eq('id', editingItem.id);
+
+      if (error) throw error;
+
+      setNewItem({
+        item_name: '',
+        for_whom: 'mum',
+        category: '',
+        quantity: 1,
+        notes: ''
+      });
+      setShowEditItem(false);
+      setEditingItem(null);
+      fetchItems();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item');
     }
   }
 
@@ -286,12 +333,22 @@ function HospitalBag() {
                           {item.notes && <span className="notes">{item.notes}</span>}
                         </div>
                       </div>
-                      <button 
-                        className="delete-button"
-                        onClick={() => deleteItem(item.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="item-actions">
+                        <button 
+                          className="edit-button"
+                          onClick={() => editItem(item)}
+                          title="Edit item"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          className="delete-button"
+                          onClick={() => deleteItem(item.id)}
+                          title="Delete item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -367,6 +424,75 @@ function HospitalBag() {
               </button>
               <button className="save-button" onClick={addItem}>
                 Add Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditItem && (
+        <div className="modal-overlay" onClick={() => setShowEditItem(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Hospital Bag Item</h2>
+            <div className="form-group">
+              <label>Item Name *</label>
+              <input
+                type="text"
+                value={newItem.item_name}
+                onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
+                placeholder="e.g., Comfortable pyjamas"
+              />
+            </div>
+            <div className="form-group">
+              <label>For Whom *</label>
+              <select
+                value={newItem.for_whom}
+                onChange={(e) => setNewItem({ ...newItem, for_whom: e.target.value, category: '' })}
+              >
+                <option value="mum">Mum</option>
+                <option value="baby">Baby</option>
+                <option value="partner">Partner</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Category *</label>
+              <select
+                value={newItem.category}
+                onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+              >
+                <option value="">Select a category</option>
+                {categories[newItem.for_whom].map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={newItem.quantity}
+                onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Notes</label>
+              <textarea
+                value={newItem.notes}
+                onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+                placeholder="Any additional notes..."
+                rows="3"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={() => {
+                setShowEditItem(false);
+                setEditingItem(null);
+              }}>
+                Cancel
+              </button>
+              <button className="save-button" onClick={updateItem}>
+                Update Item
               </button>
             </div>
           </div>

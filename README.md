@@ -1,4 +1,4 @@
-# Simply Pregnancy - Baby Tracker Web App
+# Baby Steps - Baby Tracker Web App
 
 A modern, clean pregnancy tracking web application built with React and Supabase. Features include budget planning, baby items tracking, gift wishlists, and hospital bag management.
 

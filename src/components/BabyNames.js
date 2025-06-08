@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Heart, Plus, User, Users, Star, Trash2 } from 'lucide-react';
+import { Heart, Plus, User, Users, Star, Trash2, Edit2 } from 'lucide-react';
 import './BabyNames.css';
 
 function BabyNames() {
   const [names, setNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddName, setShowAddName] = useState(false);
+  const [showEditName, setShowEditName] = useState(false);
+  const [editingName, setEditingName] = useState(null);
   const [filterGender, setFilterGender] = useState('all');
   const [sortBy, setSortBy] = useState('votes');
   const [newName, setNewName] = useState({
@@ -108,6 +110,45 @@ function BabyNames() {
     } catch (error) {
       console.error('Error adding name:', error);
       alert('Error adding name');
+    }
+  }
+
+  async function editName(name) {
+    setEditingName(name);
+    setNewName({
+      name: name.name,
+      gender: name.gender,
+      notes: name.notes || ''
+    });
+    setShowEditName(true);
+  }
+
+  async function updateName() {
+    if (!newName.name || !editingName) return;
+
+    try {
+      const { error } = await supabase
+        .from('baby_names')
+        .update({
+          name: newName.name,
+          gender: newName.gender,
+          notes: newName.notes
+        })
+        .eq('id', editingName.id);
+
+      if (error) throw error;
+
+      setNewName({
+        name: '',
+        gender: 'neutral',
+        notes: ''
+      });
+      setShowEditName(false);
+      setEditingName(null);
+      fetchNames();
+    } catch (error) {
+      console.error('Error updating name:', error);
+      alert('Error updating name');
     }
   }
 
@@ -247,14 +288,26 @@ function BabyNames() {
                   {name.name}
                   {getGenderIcon(name.gender)}
                 </h3>
-                {name.suggested_by === currentUserId && (
-                  <button 
-                    className="delete-button"
-                    onClick={() => deleteName(name.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
+                <div className="name-actions">
+                  {name.suggested_by === currentUserId && (
+                    <>
+                      <button 
+                        className="edit-button"
+                        onClick={() => editName(name)}
+                        title="Edit name"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        className="delete-button"
+                        onClick={() => deleteName(name.id)}
+                        title="Delete name"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               
               {name.notes && (
@@ -328,6 +381,54 @@ function BabyNames() {
               </button>
               <button className="save-button" onClick={addName}>
                 Add Name
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditName && (
+        <div className="modal-overlay" onClick={() => setShowEditName(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Baby Name</h2>
+            <div className="form-group">
+              <label>Name *</label>
+              <input
+                type="text"
+                value={newName.name}
+                onChange={(e) => setNewName({ ...newName, name: e.target.value })}
+                placeholder="e.g., Emma"
+              />
+            </div>
+            <div className="form-group">
+              <label>Gender</label>
+              <select
+                value={newName.gender}
+                onChange={(e) => setNewName({ ...newName, gender: e.target.value })}
+              >
+                <option value="neutral">Neutral</option>
+                <option value="boy">Boy</option>
+                <option value="girl">Girl</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Notes</label>
+              <textarea
+                value={newName.notes}
+                onChange={(e) => setNewName({ ...newName, notes: e.target.value })}
+                placeholder="Why do you love this name? Any special meaning?"
+                rows="3"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={() => {
+                setShowEditName(false);
+                setEditingName(null);
+              }}>
+                Cancel
+              </button>
+              <button className="save-button" onClick={updateName}>
+                Update Name
               </button>
             </div>
           </div>
