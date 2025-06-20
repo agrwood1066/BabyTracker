@@ -196,7 +196,7 @@ function BudgetPlanner() {
         <div className="budget-header">
           <h3>Budget Overview</h3>
           <div className="budget-amounts">
-            <span>£{totalSpent.toFixed(2)} spent of £{totalBudget.toFixed(2)} total</span>
+            <span>£{totalSpent.toFixed(0)} spent of £{totalBudget.toFixed(0)} total</span>
           </div>
         </div>
         <div className="budget-bar-container">
@@ -219,15 +219,15 @@ function BudgetPlanner() {
         <div className="budget-legend">
           <div className="legend-item">
             <div className="legend-color spent"></div>
-            <span>Spent: £{totalSpent.toFixed(2)}</span>
+            <span>Spent: £{totalSpent.toFixed(0)}</span>
           </div>
           <div className="legend-item">
             <div className="legend-color pending"></div>
-            <span>Pending: £{totalPending.toFixed(2)}</span>
+            <span>Pending: £{totalPending.toFixed(0)}</span>
           </div>
           <div className="legend-item">
             <div className="legend-color remaining"></div>
-            <span>Remaining: £{(totalBudget - totalSpent - totalPending).toFixed(2)}</span>
+            <span>Remaining: £{(totalBudget - totalSpent - totalPending).toFixed(0)}</span>
           </div>
         </div>
       </div>
@@ -326,11 +326,11 @@ function BudgetPlanner() {
                           />
                         ) : (
                           <>
-                            <span className="budget-text">Budget: £{cat.expected_budget?.toFixed(2) || '0.00'}</span>
-                            <span className="spent-text">Spent: £{categorySpent.toFixed(2)}</span>
+                            <span className="budget-text">Budget: £{cat.expected_budget?.toFixed(0) || '0'}</span>
+                            <span className="spent-text">Spent: £{categorySpent.toFixed(0)}</span>
                             <span className={`remaining-text ${isOverBudget ? 'over-budget' : ''}`}>
                               {isOverBudget ? 'Over by: ' : 'Remaining: '}
-                              £{Math.abs(cat.expected_budget - categorySpent).toFixed(2)}
+                              £{Math.abs(cat.expected_budget - categorySpent).toFixed(0)}
                             </span>
                           </>
                         )}

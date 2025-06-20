@@ -184,8 +184,8 @@ function Dashboard() {
           </div>
           <div className="stat-content">
             <h3>Budget</h3>
-            <p className="stat-value">£{stats.budget.spent.toFixed(2)}</p>
-            <p className="stat-label">of £{stats.budget.total.toFixed(2)} spent</p>
+            <p className="stat-value">£{stats.budget.spent.toFixed(0)}</p>
+            <p className="stat-label">of £{stats.budget.total.toFixed(0)} spent</p>
             <div className="stat-percentage">
               {stats.budget.total > 0 ? Math.round((stats.budget.spent / stats.budget.total) * 100) : 0}% used
             </div>
