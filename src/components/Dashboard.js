@@ -71,13 +71,19 @@ function Dashboard() {
 
   async function fetchStats(familyId) {
     try {
-      // Budget stats
-      const { data: budgetItems } = await supabase
-        .from('budget_items')
-        .select('price, purchased')
+      // Budget stats - get total budget from categories and spending from baby items
+      const { data: budgetCategories } = await supabase
+        .from('budget_categories')
+        .select('expected_budget')
         .eq('family_id', familyId);
       
-      const budgetTotal = budgetItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+      const { data: budgetItems } = await supabase
+        .from('baby_items')
+        .select('price, purchased')
+        .eq('family_id', familyId)
+        .not('budget_category_id', 'is', null);
+      
+      const budgetTotal = budgetCategories?.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0) || 0;
       const budgetSpent = budgetItems?.filter(item => item.purchased)
         .reduce((sum, item) => sum + (item.price || 0), 0) || 0;
       
@@ -177,7 +183,7 @@ function Dashboard() {
             <DollarSign size={28} />
           </div>
           <div className="stat-content">
-            <h3>Budget Tracker</h3>
+            <h3>Budget</h3>
             <p className="stat-value">£{stats.budget.spent.toFixed(2)}</p>
             <p className="stat-label">of £{stats.budget.total.toFixed(2)} spent</p>
             <div className="stat-percentage">

@@ -36,11 +36,12 @@ Set the following build configuration:
 
 ### 5. Set Environment Variables
 
-Add your Supabase credentials:
+Add your credentials in Cloudflare Pages:
 1. Click "Environment variables"
 2. Add the following:
    - `REACT_APP_SUPABASE_URL`: Your Supabase URL
    - `REACT_APP_SUPABASE_ANON_KEY`: Your Supabase anon key
+   - `REACT_APP_LINKPREVIEW_API_KEY`: Your LinkPreview.net API key (for wishlist images)
 
 ### 6. Deploy
 
