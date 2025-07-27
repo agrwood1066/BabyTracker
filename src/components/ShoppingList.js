@@ -100,7 +100,7 @@ function ShoppingList() {
     }
   }
 
-  async function addToWishlist(item) {
+  async function moveToWishlist(item) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
@@ -108,6 +108,18 @@ function ShoppingList() {
         .select('family_id')
         .eq('id', user.id)
         .single();
+
+      // Store complete shopping list data
+      const shoppingListData = {
+        quantity: item.quantity,
+        priority: item.priority,
+        budget_category_id: item.budget_category_id,
+        price_source: item.price_source,
+        starred: item.starred,
+        needed_by: item.needed_by,
+        links: item.links,
+        notes: item.notes
+      };
 
       const wishlistData = {
         family_id: profile.family_id,
@@ -124,14 +136,26 @@ function ShoppingList() {
         })(),
         price: item.price || null,
         purchased: false,
-        is_public: true
+        is_public: true,
+        shopping_list_data: shoppingListData,
+        moved_from_shopping_list: true,
+        original_baby_item_id: item.id
       };
 
-      const { error } = await supabase
+      // Insert into wishlist
+      const { error: wishlistError } = await supabase
         .from('wishlist_items')
         .insert(wishlistData);
 
-      if (error) throw error;
+      if (wishlistError) throw wishlistError;
+
+      // Remove from shopping list
+      const { error: deleteError } = await supabase
+        .from('baby_items')
+        .delete()
+        .eq('id', item.id);
+
+      if (deleteError) throw deleteError;
 
       // Update local state immediately
       const newWishlistItems = new Map(wishlistItems);
@@ -141,11 +165,14 @@ function ShoppingList() {
       });
       setWishlistItems(newWishlistItems);
       
-      // Refresh wishlist status to get the actual ID
-      await fetchWishlistStatus();
+      // Refresh both lists
+      await Promise.all([fetchItems(), fetchWishlistStatus()]);
+      
+      // Show success message
+      alert(`"${item.item_name}" moved to wishlist!`);
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
-      alert('Error adding item to wishlist');
+      console.error('Error moving to wishlist:', error);
+      alert('Error moving item to wishlist');
     }
   }
 
@@ -390,6 +417,84 @@ function ShoppingList() {
     } catch (error) {
       console.error('Error bulk assigning categories:', error);
       alert('Error assigning categories');
+    }
+  }
+
+  async function bulkMoveToWishlist() {
+    if (selectedItems.size === 0) return;
+
+    const confirmMessage = `Move ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to wishlist? They will be removed from your shopping list and budget.`;
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      const itemIds = Array.from(selectedItems);
+      const itemsToMove = items.filter(item => itemIds.includes(item.id));
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      // Prepare wishlist items data
+      const wishlistItems = itemsToMove.map(item => {
+        const shoppingListData = {
+          quantity: item.quantity,
+          priority: item.priority,
+          budget_category_id: item.budget_category_id,
+          price_source: item.price_source,
+          starred: item.starred,
+          needed_by: item.needed_by,
+          links: item.links,
+          notes: item.notes
+        };
+
+        return {
+          family_id: profile.family_id,
+          added_by: user.id,
+          item_name: item.item_name,
+          description: item.notes || '',
+          link: (() => {
+            try {
+              const links = item.links ? JSON.parse(item.links) : [];
+              return links.length > 0 ? links[0].url : '';
+            } catch {
+              return '';
+            }
+          })(),
+          price: item.price || null,
+          purchased: false,
+          is_public: true,
+          shopping_list_data: shoppingListData,
+          moved_from_shopping_list: true,
+          original_baby_item_id: item.id
+        };
+      });
+
+      // Insert into wishlist
+      const { error: wishlistError } = await supabase
+        .from('wishlist_items')
+        .insert(wishlistItems);
+
+      if (wishlistError) throw wishlistError;
+
+      // Remove from shopping list
+      const { error: deleteError } = await supabase
+        .from('baby_items')
+        .delete()
+        .in('id', itemIds);
+
+      if (deleteError) throw deleteError;
+
+      // Clear selection and refresh
+      setSelectedItems(new Set());
+      await Promise.all([fetchItems(), fetchWishlistStatus()]);
+      
+      alert(`${itemsToMove.length} item${itemsToMove.length > 1 ? 's' : ''} moved to wishlist!`);
+    } catch (error) {
+      console.error('Error bulk moving to wishlist:', error);
+      alert('Error moving items to wishlist');
     }
   }
 
@@ -671,6 +776,12 @@ function ShoppingList() {
                 >
                   Assign Budget Category
                 </button>
+                <button 
+                  className="bulk-wishlist-button"
+                  onClick={bulkMoveToWishlist}
+                >
+                  <Gift size={16} /> Move to Wishlist
+                </button>
               </div>
             )}
           </div>
@@ -688,7 +799,7 @@ function ShoppingList() {
           setGroupBy={setShoppingGroupBy}
           uniquePriceSources={uniquePriceSources}
           wishlistItems={wishlistItems}
-          addToWishlist={addToWishlist}
+          moveToWishlist={moveToWishlist}
           removeFromWishlist={removeFromWishlist}
           onEdit={editItem}
         />
@@ -707,7 +818,7 @@ function ShoppingList() {
                 onDelete={deleteItem}
                 getPriorityIcon={getPriorityIcon}
                 wishlistItems={wishlistItems}
-                addToWishlist={addToWishlist}
+                moveToWishlist={moveToWishlist}
                 removeFromWishlist={removeFromWishlist}
               />
             ))
@@ -771,7 +882,7 @@ function ShoppingList() {
 }
 
 // Shopping Mode Component
-function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources, wishlistItems, addToWishlist, removeFromWishlist, onEdit }) {
+function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSummary, groupBy, setGroupBy, uniquePriceSources, wishlistItems, moveToWishlist, removeFromWishlist, onEdit }) {
   let groupedItems = {};
 
   if (groupBy === 'source') {
@@ -947,9 +1058,9 @@ function ShoppingModeView({ items, budgetCategories, togglePurchased, budgetSumm
                           className="wishlist-button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            addToWishlist(item);
+                            moveToWishlist(item);
                           }}
-                          title="Add to Wishlist"
+                          title="Move to Wishlist"
                         >
                           <Gift size={18} />
                         </button>
@@ -987,7 +1098,7 @@ function ItemCard({
   onDelete, 
   getPriorityIcon,
   wishlistItems,
-  addToWishlist,
+  moveToWishlist,
   removeFromWishlist
 }) {
   const wishlistStatus = wishlistItems.get(item.item_name.toLowerCase());
@@ -1032,8 +1143,8 @@ function ItemCard({
           ) : (
             <button 
               className="icon-button wishlist"
-              onClick={() => addToWishlist(item)}
-              title="Add to Wishlist"
+              onClick={() => moveToWishlist(item)}
+              title="Move to Wishlist"
             >
               <Gift size={20} />
             </button>

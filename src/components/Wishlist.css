@@ -521,3 +521,90 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* New Styles for Shopping List Integration */
+.item-selection {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+}
+
+.item-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #ddd;
+  background: white;
+  cursor: pointer;
+}
+
+.item-checkbox:checked {
+  background: #007bff;
+  border-color: #007bff;
+}
+
+.wishlist-item.selected {
+  border: 2px solid #007bff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.shopping-list-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shopping-list-button:hover {
+  background: #218838;
+}
+
+.bulk-shopping-list-button {
+  padding: 8px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.bulk-shopping-list-button:hover {
+  background: #218838;
+}
+
+.clear-selection-button {
+  padding: 8px 16px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.clear-selection-button:hover {
+  background: #5a6268;
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2rem;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
