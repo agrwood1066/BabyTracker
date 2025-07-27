@@ -608,3 +608,46 @@
   font-size: 14px;
   flex-wrap: wrap;
 }
+
+/* Edit Button Styling */
+.edit-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-button:hover {
+  background: #0056b3;
+}
+
+/* Field Visibility Indicators */
+.field-visibility-note {
+  background: #e7f3ff;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #0066cc;
+  border-left: 4px solid #007bff;
+}
+
+.field-visible {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.field-note {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}

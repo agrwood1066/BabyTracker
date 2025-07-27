@@ -14,6 +14,7 @@ Your Baby Steps app has been enhanced with seamless integration between the Shop
 
 ### **Wishlist Enhancements**
 - **Move to Shopping List**: Every wishlist item can be moved to shopping list
+- **Edit Items**: Full editing of all fields with visual indicators for wishlist-visible fields
 - **Data Preservation**: Items moved from shopping list retain all original data
 - **Smart Defaults**: Items added directly to wishlist get sensible shopping list defaults
 - **Bulk Operations**: Select multiple wishlist items and move them back to shopping list
@@ -129,6 +130,14 @@ Items added directly to wishlist get these defaults:
 1. Items in Wishlist are automatically shareable with family/friends
 2. When someone marks as "purchased", item shows as gifted
 3. Can still move gifted items back to Shopping List if needed
+4. **Edit items** to update details, prices, or descriptions for gift-givers
+
+### **Comprehensive Editing**
+1. **Wishlist Editing**: Click Edit button on any wishlist item
+2. **All Shopping List Fields**: Access to quantity, priority, budget category, etc.
+3. **Visual Indicators**: 👁️ Eye icons show which fields are visible in wishlist view
+4. **Smart Updates**: Changes update both wishlist display and stored shopping list data
+5. **Helpful Notes**: Field descriptions explain when each field is used
 
 ### **Budget Management**
 1. Only Shopping List items count toward budget

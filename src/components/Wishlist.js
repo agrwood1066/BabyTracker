@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Gift, Plus, ExternalLink, Share2, Check, Trash2 } from 'lucide-react';
+import { Gift, Plus, ExternalLink, Share2, Check, Trash2, Edit2 } from 'lucide-react';
 import './Wishlist.css';
 
 function Wishlist() {
@@ -12,6 +12,8 @@ function Wishlist() {
   const [budgetCategories, setBudgetCategories] = useState([]);
   const [imageCache, setImageCache] = useState(new Map()); // Cache for link previews
   const [selectedItems, setSelectedItems] = useState(new Set()); // For bulk operations
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -512,6 +514,115 @@ function Wishlist() {
     setSelectedItems(newSelected);
   };
 
+  async function editItem(item) {
+    setEditingItem(item);
+    
+    // Populate form with current item data, merging wishlist and shopping list data
+    const shoppingData = item.shopping_list_data || {};
+    
+    setNewItem({
+      item_name: item.item_name,
+      quantity: shoppingData.quantity || 1,
+      notes: item.description || shoppingData.notes || '',
+      priority: shoppingData.priority || 'medium',
+      budget_category_id: shoppingData.budget_category_id || '',
+      price: item.price?.toString() || '',
+      price_source: shoppingData.price_source || '',
+      starred: shoppingData.starred || false,
+      needed_by: shoppingData.needed_by || '',
+      links: (() => {
+        // Try to get links from shopping_list_data first, then from direct link
+        if (shoppingData.links) {
+          try {
+            return JSON.parse(shoppingData.links);
+          } catch {
+            // Fall through to direct link
+          }
+        }
+        
+        // If there's a direct link, convert it to links format
+        if (item.link) {
+          return [{ url: item.link, price: '', source: '' }];
+        }
+        
+        // Default empty link
+        return [{ url: '', price: '', source: '' }];
+      })()
+    });
+    
+    setShowEditItem(true);
+  }
+
+  async function updateItem() {
+    if (!newItem.item_name || !editingItem) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Prepare updated shopping list data
+      const updatedShoppingListData = {
+        quantity: newItem.quantity,
+        priority: newItem.priority,
+        budget_category_id: newItem.budget_category_id || null,
+        price_source: newItem.price_source || null,
+        starred: newItem.starred,
+        needed_by: newItem.needed_by || null,
+        links: JSON.stringify(newItem.links.filter(link => link.url)),
+        notes: newItem.notes
+      };
+
+      // Prepare wishlist item updates
+      const wishlistUpdates = {
+        item_name: newItem.item_name,
+        description: newItem.notes,
+        link: (() => {
+          const links = newItem.links.filter(link => link.url);
+          return links.length > 0 ? links[0].url : '';
+        })(),
+        price: parseFloat(newItem.price) || null,
+        shopping_list_data: updatedShoppingListData,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('wishlist_items')
+        .update(wishlistUpdates)
+        .eq('id', editingItem.id);
+
+      if (error) throw error;
+
+      // Reset form and close modal
+      setNewItem({
+        item_name: '',
+        quantity: 1,
+        notes: '',
+        priority: 'medium',
+        budget_category_id: '',
+        price: '',
+        price_source: '',
+        starred: false,
+        needed_by: '',
+        links: [{ url: '', price: '', source: '' }]
+      });
+      setShowEditItem(false);
+      setEditingItem(null);
+      
+      // Refresh items and clear image cache for updated item
+      if (editingItem.link !== wishlistUpdates.link) {
+        const newImageCache = new Map(imageCache);
+        newImageCache.delete(editingItem.link);
+        setImageCache(newImageCache);
+      }
+      
+      await fetchItems();
+      
+      alert(`"${newItem.item_name}" updated successfully!`);
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item');
+    }
+  }
+
   // Helper functions for managing links
   const addLink = () => {
     setNewItem({
@@ -651,6 +762,14 @@ function Wishlist() {
                   </div>
                   <div className="item-actions">
                     <button 
+                      className="edit-button"
+                      onClick={() => editItem(item)}
+                      title="Edit Item"
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                    <button 
                       className="shopping-list-button"
                       onClick={() => moveToShoppingList(item)}
                       title="Move to Shopping List"
@@ -686,169 +805,37 @@ function Wishlist() {
       </div>
 
       {showAddItem && (
-        <div className="modal-overlay" onClick={() => setShowAddItem(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Add Wishlist Item</h2>
-            
-            <div className="form-group">
-              <label>Item Name *</label>
-              <input
-                type="text"
-                value={newItem.item_name}
-                onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
-                placeholder="e.g., Baby Monitor"
-              />
-            </div>
+        <WishlistItemModal
+          newItem={newItem}
+          setNewItem={setNewItem}
+          budgetCategories={budgetCategories}
+          neededByOptions={neededByOptions}
+          onSave={addItem}
+          onCancel={() => setShowAddItem(false)}
+          addLink={addLink}
+          updateLink={updateLink}
+          removeLink={removeLink}
+          isEditing={false}
+        />
+      )}
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Budget Category</label>
-                <select
-                  value={newItem.budget_category_id}
-                  onChange={(e) => setNewItem({ ...newItem, budget_category_id: e.target.value })}
-                >
-                  <option value="">Select budget category</option>
-                  {budgetCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label>Needed By</label>
-                <select
-                  value={newItem.needed_by}
-                  onChange={(e) => setNewItem({ ...newItem, needed_by: e.target.value })}
-                >
-                  <option value="">Select timeframe</option>
-                  {neededByOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newItem.quantity}
-                  onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Priority</label>
-                <select
-                  value={newItem.priority}
-                  onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Price</label>
-                <input
-                  type="number"
-                  value={newItem.price}
-                  onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Price Source</label>
-                <input
-                  type="text"
-                  value={newItem.price_source}
-                  onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
-                  placeholder="e.g., John Lewis"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Notes</label>
-              <textarea
-                value={newItem.notes}
-                onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
-                placeholder="Add any details about colour, size, brand preferences..."
-                rows="3"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Links & Alternative Prices</label>
-              {newItem.links.map((link, index) => (
-                <div key={index} className="link-input-group">
-                  <input
-                    type="url"
-                    value={link.url}
-                    onChange={(e) => updateLink(index, 'url', e.target.value)}
-                    placeholder="https://..."
-                  />
-                  <input
-                    type="text"
-                    value={link.source}
-                    onChange={(e) => updateLink(index, 'source', e.target.value)}
-                    placeholder="Source name"
-                  />
-                  <input
-                    type="number"
-                    value={link.price}
-                    onChange={(e) => updateLink(index, 'price', e.target.value)}
-                    placeholder="Price"
-                    step="0.01"
-                  />
-                  {newItem.links.length > 1 && (
-                    <button 
-                      type="button"
-                      className="remove-link-button"
-                      onClick={() => removeLink(index)}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button 
-                type="button"
-                className="add-link-button"
-                onClick={addLink}
-              >
-                + Add Another Link
-              </button>
-            </div>
-
-            <div className="form-group checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={newItem.starred}
-                  onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-                />
-                Star this item
-              </label>
-            </div>
-
-            <div className="modal-actions">
-              <button className="cancel-button" onClick={() => setShowAddItem(false)}>
-                Cancel
-              </button>
-              <button className="save-button" onClick={addItem}>
-                Add Item
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Edit Item Modal */}
+      {showEditItem && (
+        <WishlistItemModal
+          newItem={newItem}
+          setNewItem={setNewItem}
+          budgetCategories={budgetCategories}
+          neededByOptions={neededByOptions}
+          onSave={updateItem}
+          onCancel={() => {
+            setShowEditItem(false);
+            setEditingItem(null);
+          }}
+          addLink={addLink}
+          updateLink={updateLink}
+          removeLink={removeLink}
+          isEditing={true}
+        />
       )}
 
       {showShareModal && (
@@ -879,6 +866,204 @@ function Wishlist() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Wishlist Item Modal Component with Shopping List fields
+function WishlistItemModal({ 
+  newItem, 
+  setNewItem, 
+  budgetCategories, 
+  neededByOptions,
+  onSave, 
+  onCancel,
+  addLink,
+  updateLink,
+  removeLink,
+  isEditing
+}) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h2>{isEditing ? 'Edit Wishlist Item' : 'Add Wishlist Item'}</h2>
+        <p className="field-visibility-note">
+          👁️ Fields marked with an eye icon are visible in the wishlist view
+        </p>
+        
+        <div className="form-group">
+          <label className="field-visible">
+            👁️ Item Name *
+          </label>
+          <input
+            type="text"
+            value={newItem.item_name}
+            onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
+            placeholder="e.g., Baby Monitor"
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Budget Category</label>
+            <select
+              value={newItem.budget_category_id}
+              onChange={(e) => setNewItem({ ...newItem, budget_category_id: e.target.value })}
+            >
+              <option value="">Select budget category</option>
+              {budgetCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+            <small className="field-note">Used when moved to Shopping List</small>
+          </div>
+          
+          <div className="form-group">
+            <label>Needed By</label>
+            <select
+              value={newItem.needed_by}
+              onChange={(e) => setNewItem({ ...newItem, needed_by: e.target.value })}
+            >
+              <option value="">Select timeframe</option>
+              {neededByOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            <small className="field-note">Used when moved to Shopping List</small>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Quantity</label>
+            <input
+              type="number"
+              min="1"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+            />
+            <small className="field-note">Used when moved to Shopping List</small>
+          </div>
+          
+          <div className="form-group">
+            <label>Priority</label>
+            <select
+              value={newItem.priority}
+              onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <small className="field-note">Used when moved to Shopping List</small>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="field-visible">
+              👁️ Price
+            </label>
+            <input
+              type="number"
+              value={newItem.price}
+              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+              placeholder="0.00"
+              step="0.01"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Price Source</label>
+            <input
+              type="text"
+              value={newItem.price_source}
+              onChange={(e) => setNewItem({ ...newItem, price_source: e.target.value })}
+              placeholder="e.g., John Lewis"
+            />
+            <small className="field-note">Used when moved to Shopping List</small>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="field-visible">
+            👁️ Notes/Description
+          </label>
+          <textarea
+            value={newItem.notes}
+            onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+            placeholder="Add any details about colour, size, brand preferences..."
+            rows="3"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="field-visible">
+            👁️ Links & Alternative Prices
+          </label>
+          <small className="field-note">First link will be shown in wishlist view</small>
+          {newItem.links.map((link, index) => (
+            <div key={index} className="link-input-group">
+              <input
+                type="url"
+                value={link.url}
+                onChange={(e) => updateLink(index, 'url', e.target.value)}
+                placeholder="https://..."
+              />
+              <input
+                type="text"
+                value={link.source}
+                onChange={(e) => updateLink(index, 'source', e.target.value)}
+                placeholder="Source name"
+              />
+              <input
+                type="number"
+                value={link.price}
+                onChange={(e) => updateLink(index, 'price', e.target.value)}
+                placeholder="Price"
+                step="0.01"
+              />
+              {newItem.links.length > 1 && (
+                <button 
+                  type="button"
+                  className="remove-link-button"
+                  onClick={() => removeLink(index)}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button 
+            type="button"
+            className="add-link-button"
+            onClick={addLink}
+          >
+            + Add Another Link
+          </button>
+        </div>
+
+        <div className="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={newItem.starred}
+              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
+            />
+            Star this item
+            <small className="field-note">Used when moved to Shopping List</small>
+          </label>
+        </div>
+
+        <div className="modal-actions">
+          <button className="cancel-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button className="save-button" onClick={onSave}>
+            {isEditing ? 'Update Item' : 'Add Item'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
