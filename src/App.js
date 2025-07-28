@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 import './App.css';
 
 // Components
-import Login from './components/Login';
+import Landing from './components/Landing';
 import Dashboard from './components/Dashboard';
 import Navigation from './components/Navigation';
 import BudgetPlanner from './components/BudgetPlanner';
@@ -47,8 +47,8 @@ function App() {
       <div className="App">
         {!session ? (
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (
           <>

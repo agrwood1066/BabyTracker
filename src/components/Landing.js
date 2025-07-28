@@ -1,0 +1,458 @@
+import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
+import { 
+  Baby, 
+  ShoppingCart, 
+  Heart, 
+  Gift, 
+  DollarSign, 
+  Briefcase,
+  Users,
+  Calendar,
+  Check,
+  ArrowRight,
+  Star,
+  Sparkles
+} from 'lucide-react';
+import './Landing.css';
+
+// Video Demo Component
+const VideoDemo = ({ 
+  videoSrc, 
+  webmSrc, 
+  fallbackImage, 
+  alt, 
+  className = "" 
+}) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const handleLoad = () => setIsLoaded(true);
+  const handleError = () => setHasError(true);
+
+  if (hasError) {
+    return (
+      <div className={`video-fallback ${className}`}>
+        <div className="fallback-icon">
+          {alt.includes('Shopping') && <ShoppingCart size={48} />}
+          {alt.includes('Budget') && <DollarSign size={48} />}
+          {alt.includes('Wishlist') && <Gift size={48} />}
+          {alt.includes('Hospital') && <Briefcase size={48} />}
+          {alt.includes('Names') && <Heart size={48} />}
+        </div>
+        <p>Feature preview</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`video-container ${className}`}>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className={`demo-video ${isLoaded ? 'loaded' : 'loading'}`}
+        onLoadedData={handleLoad}
+        onError={handleError}
+      >
+        {webmSrc && <source src={webmSrc} type="video/webm" />}
+        <source src={videoSrc} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      {!isLoaded && (
+        <div className="video-loading">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+function Landing() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [activeFeature, setActiveFeature] = useState(0);
+
+  const features = [
+    {
+      id: 'shopping-list',
+      title: 'Shopping List',
+      icon: ShoppingCart,
+      shortDesc: 'Organised shopping with budget integration',
+      longDesc: 'Create comprehensive shopping lists with budget tracking, priority levels, and mobile shopping mode. Link items directly to your budget categories and never overspend again.',
+      benefits: [
+        'Budget integration with real-time tracking',
+        'Priority system (High/Medium/Low)',
+        'Mobile shopping mode for in-store use',
+        'Multiple purchase links and price comparison',
+        'Timeline planning with "needed by" dates'
+      ],
+      videoSrc: '/videos/shopping-list-demo.mp4',
+      webmSrc: '/videos/shopping-list-demo.webm',
+      fallbackImage: '/images/shopping-list-preview.png'
+    },
+    {
+      id: 'baby-names',
+      title: 'Baby Names',
+      icon: Heart,
+      shortDesc: 'Collaborate on the perfect name choice',
+      longDesc: 'Suggest, edit, and vote on baby names with your partner and family. Keep track of your favourite options and see what everyone thinks.',
+      benefits: [
+        'Family collaboration and voting',
+        'Gender-specific categorisation',
+        'Personal notes and meanings',
+        'Edit suggestions from original proposer',
+        'Keep track of favourites and popularity'
+      ],
+      videoSrc: '/videos/baby-names-demo.mp4',
+      webmSrc: '/videos/baby-names-demo.webm',
+      fallbackImage: '/images/baby-names-preview.png'
+    },
+    {
+      id: 'wishlist',
+      title: 'Gift Wishlist',
+      icon: Gift,
+      shortDesc: 'Shareable wishlist with automatic images',
+      longDesc: 'Create beautiful, shareable wishlists that automatically extract product images from URLs. Perfect for baby showers and gift coordination.',
+      benefits: [
+        'Automatic product image extraction',
+        'Shareable links for family and friends',
+        'Professional product card layout',
+        'Integration with shopping list',
+        'Track what\'s been purchased by whom'
+      ],
+      videoSrc: '/videos/wishlist-demo.mp4',
+      webmSrc: '/videos/wishlist-demo.webm',
+      fallbackImage: '/images/wishlist-preview.png'
+    },
+    {
+      id: 'budget-tracker',
+      title: 'Budget Tracker',
+      icon: DollarSign,
+      shortDesc: 'Complete financial planning for your arrival',
+      longDesc: 'Set category budgets, track spending, and export data for analysis. Visual progress indicators keep you on track financially.',
+      benefits: [
+        'Category-based budget planning',
+        'Visual progress indicators',
+        'Running totals and overspend alerts',
+        'CSV export for external analysis',
+        'Integration with shopping list purchases'
+      ],
+      videoSrc: '/videos/budget-demo.mp4',
+      webmSrc: '/videos/budget-demo.webm',
+      fallbackImage: '/images/budget-preview.png'
+    },
+    {
+      id: 'hospital-bag',
+      title: 'Hospital Bag',
+      icon: Briefcase,
+      shortDesc: 'Comprehensive checklist for the big day',
+      longDesc: 'Never forget anything important with comprehensive checklists for mum, baby, and partner. Edit and customise to your specific needs.',
+      benefits: [
+        'Separate lists for mum, baby, and partner',
+        'Customisable quantities and categories',
+        'Progress tracking and completion status',
+        'Edit any item to match your needs',
+        'Essential items pre-populated to get started'
+      ],
+      videoSrc: '/videos/hospital-bag-demo.mp4',
+      webmSrc: '/videos/hospital-bag-demo.webm',
+      fallbackImage: '/images/hospital-bag-preview.png'
+    }
+  ];
+
+  const handleAuth = async (e, isSignUpForm) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      if (isSignUpForm) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (signUpData.user) {
+          setMessage('Account created successfully! Please check your email for verification.');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) throw error;
+        if (data.user) {
+          setMessage('Welcome back!');
+        }
+      }
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const scrollToFeature = (featureId) => {
+    const element = document.getElementById(featureId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="landing-container">
+      {/* Header */}
+      <header className="landing-header">
+        <div className="header-content">
+          <div className="logo-section">
+            <Baby className="logo-icon" size={32} />
+            <span className="logo-text">Baby Steps Planner</span>
+          </div>
+          <div className="header-actions">
+            <button 
+              className="login-btn"
+              onClick={() => setShowLogin(true)}
+            >
+              Log In
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="hero-text">
+            <h1 className="hero-title">
+              Take control of your pregnancy journey with one organised app
+            </h1>
+            <p className="hero-subtitle">
+              From budgeting to baby names, manage everything in one beautiful, shareable space that grows with your family
+            </p>
+            <div className="hero-actions">
+              <button 
+                className="cta-primary"
+                onClick={() => setShowSignUp(true)}
+              >
+                Get Started
+                <ArrowRight size={20} />
+              </button>
+              <p className="trial-text">Try the full version for a limited time only</p>
+            </div>
+          </div>
+          <div className="hero-visual">
+            <div className="hero-card">
+              <div className="card-header">
+                <Sparkles size={20} />
+                <span>Your pregnancy organised</span>
+              </div>
+              <div className="progress-items">
+                <div className="progress-item">
+                  <ShoppingCart size={16} />
+                  <span>Shopping List</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '75%'}}></div>
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <Gift size={16} />
+                  <span>Wishlist</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '60%'}}></div>
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <Briefcase size={16} />
+                  <span>Hospital Bag</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '40%'}}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Organisation Section */}
+      <section className="organisation-section">
+        <div className="section-content">
+          <h2>Boost your pregnancy organisation</h2>
+          <p className="section-subtitle">One app to organise everything you need when expecting</p>
+        </div>
+      </section>
+
+      {/* Features Carousel */}
+      <section className="features-carousel">
+        <div className="carousel-container">
+          {features.map((feature, index) => {
+            const IconComponent = feature.icon;
+            return (
+              <div 
+                key={feature.id}
+                className={`feature-card ${activeFeature === index ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveFeature(index);
+                  scrollToFeature(feature.id);
+                }}
+              >
+                <div className="feature-icon">
+                  <IconComponent size={24} />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.shortDesc}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Detailed Feature Sections with Video Demos */}
+      <section className="detailed-features">
+        {features.map((feature, index) => {
+          const IconComponent = feature.icon;
+          return (
+            <div key={feature.id} id={feature.id} className="feature-detail">
+              <div className="feature-detail-content">
+                <div className="feature-detail-text">
+                  <div className="feature-detail-header">
+                    <IconComponent size={32} />
+                    <h2>{feature.title}</h2>
+                  </div>
+                  <p className="feature-detail-desc">{feature.longDesc}</p>
+                  <ul className="feature-benefits">
+                    {feature.benefits.map((benefit, idx) => (
+                      <li key={idx}>
+                        <Check size={16} />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="feature-detail-visual">
+                  <VideoDemo
+                    videoSrc={feature.videoSrc}
+                    webmSrc={feature.webmSrc}
+                    fallbackImage={feature.fallbackImage}
+                    alt={`${feature.title} Demo`}
+                    className="feature-demo"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Final CTA */}
+      <section className="final-cta">
+        <div className="cta-content">
+          <h2>Ready to organise your pregnancy journey?</h2>
+          <p>Join thousands of parents-to-be who trust Baby Steps Planner</p>
+          <button 
+            className="cta-primary"
+            onClick={() => setShowSignUp(true)}
+          >
+            Get Started Today
+            <ArrowRight size={20} />
+          </button>
+        </div>
+      </section>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <div className="modal-overlay" onClick={() => setShowLogin(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Welcome Back</h2>
+            <form onSubmit={(e) => handleAuth(e, false)}>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </button>
+            </form>
+            <p>
+              Don't have an account?{' '}
+              <button 
+                className="link-btn"
+                onClick={() => {
+                  setShowLogin(false);
+                  setShowSignUp(true);
+                }}
+              >
+                Sign Up
+              </button>
+            </p>
+            {message && <div className="message">{message}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Sign Up Modal */}
+      {showSignUp && (
+        <div className="modal-overlay" onClick={() => setShowSignUp(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Create Your Account</h2>
+            <form onSubmit={(e) => handleAuth(e, true)}>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password (min 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Get Started'}
+              </button>
+            </form>
+            <p>
+              Already have an account?{' '}
+              <button 
+                className="link-btn"
+                onClick={() => {
+                  setShowSignUp(false);
+                  setShowLogin(true);
+                }}
+              >
+                Sign In
+              </button>
+            </p>
+            {message && <div className="message">{message}</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default Landing;
