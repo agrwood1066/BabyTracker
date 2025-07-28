@@ -7,11 +7,8 @@ import {
   Gift, 
   DollarSign, 
   Briefcase,
-  Users,
-  Calendar,
   Check,
   ArrowRight,
-  Star,
   Sparkles
 } from 'lucide-react';
 import './Landing.css';
