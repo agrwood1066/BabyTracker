@@ -24,17 +24,44 @@ function Dashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         
         // Fetch profile
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
         
-        setProfile(profileData);
+        let currentProfile = profileData;
+        
+        // If profile doesn't exist, create it
+        if (profileError || !profileData) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Profile not found, creating new profile...');
+          }
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email,
+              family_id: crypto.randomUUID()
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Error creating profile:', createError);
+            }
+            throw createError;
+          }
+          
+          currentProfile = newProfile;
+        }
+        
+        setProfile(currentProfile);
         
         // Calculate pregnancy week and days until due
-        if (profileData?.due_date) {
-          const dueDate = new Date(profileData.due_date);
+        if (currentProfile?.due_date) {
+          const dueDate = new Date(currentProfile.due_date);
           const today = new Date();
           const diffTime = dueDate - today;
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -48,19 +75,21 @@ function Dashboard() {
         }
         
         // Fetch family members
-        if (profileData?.family_id) {
+        if (currentProfile?.family_id) {
           const { data: members } = await supabase
             .from('profiles')
             .select('full_name, email')
-            .eq('family_id', profileData.family_id)
+            .eq('family_id', currentProfile.family_id)
             .neq('id', user.id);
           setFamilyMembers(members || []);
         }
         
         // Fetch stats
-        await fetchStats(profileData.family_id);
+        await fetchStats(currentProfile?.family_id);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching data:', error);
+        }
       } finally {
         setLoading(false);
       }
@@ -70,6 +99,18 @@ function Dashboard() {
   }, []);
 
   async function fetchStats(familyId) {
+    // Don't fetch stats if no family ID
+    if (!familyId) {
+      setStats({
+        budget: { total: 0, spent: 0 },
+        babyItems: { total: 0, purchased: 0 },
+        wishlist: { total: 0, purchased: 0 },
+        hospitalBag: { total: 0, packed: 0 },
+        babyNames: { total: 0 }
+      });
+      return;
+    }
+    
     try {
       // Budget stats - get total budget from categories and spending from baby items
       const { data: budgetCategories } = await supabase
@@ -128,7 +169,9 @@ function Dashboard() {
         babyNames: { total: babyNamesCount || 0 }
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching stats:', error);
+      }
     }
   }
 

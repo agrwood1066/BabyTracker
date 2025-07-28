@@ -175,11 +175,8 @@ function BudgetPlanner() {
       <div className="budget-header">
         <h1>Budget Planner</h1>
         <div className="budget-actions">
-          <Link to="/shopping-list" className="add-button">
-            <Plus size={16} /> Add Items to Shopping List
-          </Link>
           <button className="add-button secondary" onClick={() => setShowAddCategory(true)}>
-            <Plus size={16} /> Add Category
+            <Plus size={16} /> Add Budget Category
           </button>
           <CSVLink 
             data={csvData} 
@@ -384,7 +381,7 @@ function BudgetPlanner() {
       {showAddCategory && (
         <div className="modal-overlay" onClick={() => setShowAddCategory(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Add Category</h2>
+            <h2>Add Budget Category</h2>
             <div className="form-group">
               <label>Category Name</label>
               <input
@@ -409,7 +406,7 @@ function BudgetPlanner() {
                 Cancel
               </button>
               <button className="save-button" onClick={addCategory}>
-                Add Category
+                Add Budget Category
               </button>
             </div>
           </div>

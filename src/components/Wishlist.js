@@ -93,7 +93,13 @@ function Wishlist() {
       if (item.link && !newImageCache.has(item.link)) {
         try {
           // Use LinkPreview.net API with environment variable
-          const apiKey = process.env.REACT_APP_LINKPREVIEW_API_KEY || 'demo';
+          const apiKey = process.env.REACT_APP_LINKPREVIEW_API_KEY;
+          if (!apiKey || apiKey === 'demo') {
+            // Skip API call if no key or demo key
+            newImageCache.set(item.link, null);
+            continue;
+          }
+          
           const response = await fetch(
             `https://api.linkpreview.net/?key=${apiKey}&q=${encodeURIComponent(item.link)}`
           );

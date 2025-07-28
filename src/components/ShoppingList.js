@@ -22,6 +22,11 @@ function ShoppingList() {
   const [showBudgetProgress, setShowBudgetProgress] = useState(false);
   const [shoppingGroupBy, setShoppingGroupBy] = useState('category'); // 'category' or 'source'
   const [wishlistItems, setWishlistItems] = useState(new Map()); // Map of item_id -> wishlist_status
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    expected_budget: ''
+  });
   const [newItem, setNewItem] = useState({
     item_name: '',
     quantity: 1,
@@ -420,6 +425,36 @@ function ShoppingList() {
     }
   }
 
+  async function addCategory() {
+    if (!newCategory.name) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      const { error } = await supabase
+        .from('budget_categories')
+        .insert({
+          name: newCategory.name,
+          expected_budget: parseFloat(newCategory.expected_budget) || 0,
+          family_id: profile.family_id
+        });
+
+      if (error) throw error;
+
+      setNewCategory({ name: '', expected_budget: '' });
+      setShowAddCategory(false);
+      fetchBudgetCategories();
+    } catch (error) {
+      console.error('Error adding category:', error);
+      alert('Error adding category');
+    }
+  }
+
   async function bulkMoveToWishlist() {
     if (selectedItems.size === 0) return;
 
@@ -595,6 +630,9 @@ function ShoppingList() {
           </button>
           <button className="add-button" onClick={() => setShowAddItem(true)}>
             <Plus size={16} /> Add Item
+          </button>
+          <button className="add-button secondary" onClick={() => setShowAddCategory(true)}>
+            <Plus size={16} /> Add Budget Category
           </button>
         </div>
       </div>
@@ -876,6 +914,42 @@ function ShoppingList() {
           onCancel={() => setShowBulkAssign(false)}
           selectedCount={selectedItems.size}
         />
+      )}
+
+      {/* Add Budget Category Modal */}
+      {showAddCategory && (
+        <div className="modal-overlay" onClick={() => setShowAddCategory(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Add Budget Category</h2>
+            <div className="form-group">
+              <label>Category Name</label>
+              <input
+                type="text"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                placeholder="e.g., Nursery Furniture"
+              />
+            </div>
+            <div className="form-group">
+              <label>Expected Budget</label>
+              <input
+                type="number"
+                value={newCategory.expected_budget}
+                onChange={(e) => setNewCategory({ ...newCategory, expected_budget: e.target.value })}
+                placeholder="0.00"
+                step="0.01"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={() => setShowAddCategory(false)}>
+                Cancel
+              </button>
+              <button className="save-button" onClick={addCategory}>
+                Add Budget Category
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
