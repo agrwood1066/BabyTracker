@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Plus, Edit2, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { CSVLink } from 'react-csv';

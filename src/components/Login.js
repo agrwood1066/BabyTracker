@@ -34,7 +34,11 @@ function Login() {
           console.log('SignUp Success');
         }
 
-        setMessage('Sign up successful! Please check your email for verification link.');
+        if (signUpData.user) {
+          setMessage('Sign up successful! Please check your email for verification link.');
+        } else {
+          setMessage('Sign up initiated. Please check your email for verification link.');
+        }
       } else {
         // Sign in
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -53,7 +57,12 @@ function Login() {
         if (process.env.NODE_ENV === 'development') {
           console.log('SignIn Success');
         }
-        setMessage('Sign in successful!');
+        
+        if (data.user) {
+          setMessage('Sign in successful!');
+        } else {
+          setMessage('Sign in completed.');
+        }
       }
     } catch (error) {
       setMessage(error.message);
