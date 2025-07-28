@@ -557,8 +557,6 @@ function Wishlist() {
     if (!newItem.item_name || !editingItem) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
       // Prepare updated shopping list data
       const updatedShoppingListData = {
         quantity: newItem.quantity,
