@@ -35,14 +35,37 @@ function Dashboard() {
         // If profile doesn't exist, create it
         if (profileError || !profileData) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('Profile not found, creating new profile...');
+            console.log('Profile not found, checking for existing family data...');
           }
+          
+          // Check if user has existing data under their user ID
+          const { data: existingItems } = await supabase
+            .from('baby_items')
+            .select('family_id')
+            .eq('added_by', user.id)
+            .limit(1);
+          
+          let familyId;
+          if (existingItems && existingItems.length > 0) {
+            // User has existing data, use that family_id
+            familyId = existingItems[0].family_id;
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Found existing data, using family_id:', familyId);
+            }
+          } else {
+            // New user, create new family_id
+            familyId = self.crypto.randomUUID();
+            if (process.env.NODE_ENV === 'development') {
+              console.log('New user, created family_id:', familyId);
+            }
+          }
+          
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
               id: user.id,
               email: user.email,
-              family_id: crypto.randomUUID()
+              family_id: familyId
             })
             .select()
             .single();

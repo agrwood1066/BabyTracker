@@ -20,3 +20,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', event, session)
 })
+
+// Expose to window for debugging (development only)
+if (process.env.NODE_ENV === 'development') {
+  window.supabase = supabase;
+}
