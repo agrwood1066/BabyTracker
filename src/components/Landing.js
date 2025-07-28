@@ -9,7 +9,9 @@ import {
   Briefcase,
   Check,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import './Landing.css';
 
@@ -74,6 +76,7 @@ function Landing() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
+  const [carouselPosition, setCarouselPosition] = useState(0);
 
   const features = [
     {
@@ -205,6 +208,20 @@ function Landing() {
     }
   };
 
+  const scrollCarouselLeft = () => {
+    const container = document.querySelector('.carousel-container');
+    if (container) {
+      container.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollCarouselRight = () => {
+    const container = document.querySelector('.carousel-container');
+    if (container) {
+      container.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="landing-container">
       {/* Header */}
@@ -225,12 +242,19 @@ function Landing() {
         </div>
       </header>
 
+      {/* Brand Section */}
+      <section className="brand-section">
+        <div className="brand-content">
+          <h1 className="brand-title">Baby Steps Planner</h1>
+        </div>
+      </section>
+
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
-              Take control of your pregnancy journey with one organised app
+              Take control of your pregnancy with one organised app
             </h1>
             <p className="hero-subtitle">
               From budgeting to baby names, manage everything in one beautiful, shareable space that grows with your family
@@ -243,7 +267,7 @@ function Landing() {
                 Get Started
                 <ArrowRight size={20} />
               </button>
-              <p className="trial-text">Try the full version for a limited time only</p>
+              <p className="trial-text">Get exclusive early access before the full launch</p>
             </div>
           </div>
           <div className="hero-visual">
@@ -274,6 +298,20 @@ function Landing() {
                     <div className="progress-fill" style={{width: '40%'}}></div>
                   </div>
                 </div>
+                <div className="progress-item">
+                  <Heart size={16} />
+                  <span>Baby Names</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '85%'}}></div>
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <DollarSign size={16} />
+                  <span>Budget Tracker</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '50%'}}></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -290,26 +328,34 @@ function Landing() {
 
       {/* Features Carousel */}
       <section className="features-carousel">
-        <div className="carousel-container">
-          {features.map((feature, index) => {
-            const IconComponent = feature.icon;
-            return (
-              <div 
-                key={feature.id}
-                className={`feature-card ${activeFeature === index ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveFeature(index);
-                  scrollToFeature(feature.id);
-                }}
-              >
-                <div className="feature-icon">
-                  <IconComponent size={24} />
+        <div className="carousel-wrapper">
+          <button className="carousel-nav carousel-nav-left" onClick={scrollCarouselLeft}>
+            <ChevronLeft size={24} />
+          </button>
+          <div className="carousel-container">
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <div 
+                  key={feature.id}
+                  className={`feature-card ${activeFeature === index ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveFeature(index);
+                    scrollToFeature(feature.id);
+                  }}
+                >
+                  <div className="feature-icon">
+                    <IconComponent size={24} />
+                  </div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.shortDesc}</p>
                 </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.shortDesc}</p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <button className="carousel-nav carousel-nav-right" onClick={scrollCarouselRight}>
+            <ChevronRight size={24} />
+          </button>
         </div>
       </section>
 
@@ -317,8 +363,9 @@ function Landing() {
       <section className="detailed-features">
         {features.map((feature, index) => {
           const IconComponent = feature.icon;
+          const isEven = index % 2 === 0;
           return (
-            <div key={feature.id} id={feature.id} className="feature-detail">
+            <div key={feature.id} id={feature.id} className={`feature-detail ${isEven ? 'feature-detail-even' : 'feature-detail-odd'}`}>
               <div className="feature-detail-content">
                 <div className="feature-detail-text">
                   <div className="feature-detail-header">
@@ -354,7 +401,7 @@ function Landing() {
       <section className="final-cta">
         <div className="cta-content">
           <h2>Ready to organise your pregnancy journey?</h2>
-          <p>Join thousands of parents-to-be who trust Baby Steps Planner</p>
+          <p>Join other new parents-to-be who trust Baby Steps Planner</p>
           <button 
             className="cta-primary"
             onClick={() => setShowSignUp(true)}
