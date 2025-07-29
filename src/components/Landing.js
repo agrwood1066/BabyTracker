@@ -241,20 +241,14 @@ function Landing() {
         </div>
       </header>
 
-      {/* Brand Section */}
-      <section className="brand-section">
-        <div className="brand-content">
-          <h1 className="brand-title">Baby Steps Planner</h1>
-        </div>
-      </section>
-
-      {/* Hero Section */}
+      {/* Hero Section with Brand Title */}
       <section className="hero-section">
         <div className="hero-content">
           <div className="hero-text">
-            <h1 className="hero-title">
+            <h1 className="brand-title">Baby Steps Planner</h1>
+            <h2 className="hero-title">
               Take control of your pregnancy with one organised app
-            </h1>
+            </h2>
             <p className="hero-subtitle">
               From budgeting to baby names, manage everything in one beautiful, shareable space that grows with your family
             </p>
