@@ -80,7 +80,7 @@
 
 /* Hero Section */
 .hero-section {
-  padding: 4rem 2rem 4rem;
+  padding: 5.5rem 2rem 4rem;
   max-width: 1200px;
   margin: 0 auto;
   background: linear-gradient(135deg, #fef7f7 0%, #f8faff 100%);
@@ -874,7 +874,7 @@
   }
   
   .hero-section {
-    padding: 3rem 1rem 4rem;
+    padding: 4.5rem 1rem 4rem;
   }
   
   .feature-detail {
@@ -912,7 +912,7 @@
   }
   
   .hero-section {
-    padding: 2.5rem 1rem 3rem;
+    padding: 4rem 1rem 3rem;
   }
   
   .video-fallback,
