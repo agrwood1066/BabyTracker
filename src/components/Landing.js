@@ -76,7 +76,6 @@ function Landing() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
-  const [carouselPosition, setCarouselPosition] = useState(0);
 
   const features = [
     {
