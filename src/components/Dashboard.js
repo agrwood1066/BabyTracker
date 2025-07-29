@@ -54,7 +54,7 @@ function Dashboard() {
             }
           } else {
             // New user, create new family_id
-            familyId = self.crypto.randomUUID();
+            familyId = crypto.randomUUID();
             if (process.env.NODE_ENV === 'development') {
               console.log('New user, created family_id:', familyId);
             }
