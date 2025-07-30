@@ -14,6 +14,10 @@ import HospitalBag from './components/HospitalBag';
 import BabyNames from './components/BabyNames';
 import Profile from './components/Profile';
 
+// Legal Components (available to all users)
+import PrivacyPolicy from './components/legal/PrivacyPolicy';
+import TermsOfService from './components/legal/TermsOfService';
+
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,8 @@ function App() {
         {!session ? (
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (
@@ -62,6 +68,9 @@ function App() {
                 <Route path="/hospital-bag" element={<HospitalBag />} />
                 <Route path="/names" element={<BabyNames />} />
                 <Route path="/profile" element={<Profile />} />
+                {/* Legal pages available to logged-in users too */}
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </main>

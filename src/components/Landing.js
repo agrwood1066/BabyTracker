@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { 
   Baby, 
@@ -11,7 +12,10 @@ import {
   ArrowRight,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Shield,
+  FileText,
+  Mail
 } from 'lucide-react';
 import './Landing.css';
 
@@ -405,6 +409,55 @@ function Landing() {
         </div>
       </section>
 
+      {/* Footer with Legal Links */}
+      <footer className="landing-footer">
+        <div className="footer-content">
+          <div className="footer-section">
+            <div className="footer-brand">
+              <Baby className="footer-logo" size={24} />
+              <span>Baby Steps Planner</span>
+            </div>
+            <p className="footer-description">
+              The complete pregnancy planning solution for modern families
+            </p>
+          </div>
+          
+          <div className="footer-section">
+            <h3>Legal</h3>
+            <div className="footer-links">
+              <Link to="/privacy-policy" className="footer-link">
+                <Shield size={16} />
+                Privacy Policy
+              </Link>
+              <Link to="/terms-of-service" className="footer-link">
+                <FileText size={16} />
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+          
+          <div className="footer-section">
+            <h3>Support</h3>
+            <div className="footer-links">
+              <a href="mailto:hello@babystepsplanner.com" className="footer-link">
+                <Mail size={16} />
+                Customer Support
+              </a>
+            </div>
+            <p className="support-text">
+              Questions or need help? We're here for you.
+            </p>
+          </div>
+        </div>
+        
+        <div className="footer-bottom">
+          <p>&copy; {new Date().getFullYear()} Baby Steps Planner. All rights reserved.</p>
+          <p className="footer-notice">
+            By using this service, you agree to our <Link to="/terms-of-service">Terms of Service</Link> and <Link to="/privacy-policy">Privacy Policy</Link>.
+          </p>
+        </div>
+      </footer>
+
       {/* Login Modal */}
       {showLogin && (
         <div className="modal-overlay" onClick={() => setShowLogin(false)}>
@@ -452,6 +505,11 @@ function Landing() {
         <div className="modal-overlay" onClick={() => setShowSignUp(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Create Your Account</h2>
+            <p className="signup-terms">
+              By creating an account, you agree to our{' '}
+              <Link to="/terms-of-service" target="_blank">Terms of Service</Link> and{' '}
+              <Link to="/privacy-policy" target="_blank">Privacy Policy</Link>.
+            </p>
             <form onSubmit={(e) => handleAuth(e, true)}>
               <input
                 type="email"
