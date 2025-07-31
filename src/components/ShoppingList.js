@@ -897,6 +897,13 @@ function ShoppingList() {
             setShowEditItem(false);
             setEditingItem(null);
           }}
+          onDelete={() => {
+            // Call the existing deleteItem function with the editing item's ID
+            deleteItem(editingItem.id);
+            // Close the edit modal after deletion
+            setShowEditItem(false);
+            setEditingItem(null);
+          }}
           addLink={addLink}
           updateLink={updateLink}
           removeLink={removeLink}
@@ -1325,6 +1332,7 @@ function AddItemModal({
   neededByOptions,
   onSave, 
   onCancel,
+  onDelete,
   addLink,
   updateLink,
   removeLink,
@@ -1333,7 +1341,22 @@ function AddItemModal({
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>{isEditing ? 'Edit Shopping List Item' : 'Add Shopping List Item'}</h2>
+        <div className="modal-header">
+          <h2>{isEditing ? 'Edit Shopping List Item' : 'Add Shopping List Item'}</h2>
+          <div className="modal-header-actions">
+            <label className="star-toggle">
+              <input
+                type="checkbox"
+                checked={newItem.starred}
+                onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
+              />
+              <Star size={22} fill={newItem.starred ? '#ffd700' : 'none'} color={newItem.starred ? '#ffd700' : '#ccc'} />
+            </label>
+            <button className="modal-close-button" onClick={onCancel} title="Cancel">
+              ×
+            </button>
+          </div>
+        </div>
         
         <div className="form-group">
           <label>Item Name *</label>
@@ -1473,25 +1496,31 @@ function AddItemModal({
           </button>
         </div>
 
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={newItem.starred}
-              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-            />
-            Star this item
-          </label>
-        </div>
-
         <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave}>
+          <button className="save-button primary-hero" onClick={onSave}>
             {isEditing ? 'Update Item' : 'Add Item'}
           </button>
         </div>
+        
+        {/* Delete button only shown in edit mode, positioned below other buttons */}
+        {isEditing && onDelete && (
+          <div className="delete-action-section">
+            <button 
+              className="delete-item-button" 
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete "${newItem.item_name}"? This action cannot be undone.`)) {
+                  onDelete();
+                }
+              }}
+            >
+              <Trash2 size={16} />
+              Delete Item
+            </button>
+            <p className="delete-warning">
+              This will permanently delete the item from your shopping list
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
