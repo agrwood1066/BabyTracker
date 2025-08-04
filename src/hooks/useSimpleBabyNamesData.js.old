@@ -1,0 +1,328 @@
+// Simplified Baby Names Database Integration
+// Direct Supabase queries without complex database functions
+// Works with cleaned ons_baby_names and ons_name_trends tables
+
+import { useState, useCallback } from 'react';
+import { supabase } from '../supabaseClient';
+
+// Simple hook for name trajectory prediction
+export const useNameTrajectoryPredictor = () => {
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const predictTrajectory = useCallback(async (searchName) => {
+    if (!searchName?.trim()) return;
+
+    try {
+      setLoading(true);
+      setResult(null);
+
+      console.log('🔍 Searching for name:', searchName);
+
+      // Direct query to your cleaned database
+      const { data: nameData, error: nameError } = await supabase
+        .from('ons_baby_names')
+        .select(`
+          id,
+          name,
+          gender,
+          origin,
+          meaning,
+          cultural_category,
+          ons_name_trends (
+            current_rank,
+            previous_rank,
+            year_over_year_change,
+            five_year_change,
+            trend_category,
+            prediction,
+            momentum_score,
+            cultural_influence_score
+          )
+        `)
+        .ilike('name', searchName.trim())
+        .single();
+
+      if (nameError) {
+        console.error('Name search error:', nameError);
+        setResult({
+          name: searchName,
+          error: `"${searchName}" not found in the ONS 2024 database. Try popular names like Muhammad, Olivia, Noah, Raya, or Bodhi!`
+        });
+        return;
+      }
+
+      if (!nameData?.ons_name_trends?.length) {
+        setResult({
+          name: searchName,
+          error: `Found "${nameData.name}" but no trend data available.`
+        });
+        return;
+      }
+
+      const trend = nameData.ons_name_trends[0];
+      
+      console.log('✅ Found name data:', nameData);
+      console.log('📊 Trend data:', trend);
+
+      setResult({
+        name: nameData.name,
+        gender: nameData.gender,
+        origin: nameData.origin,
+        meaning: nameData.meaning,
+        culturalCategory: nameData.cultural_category,
+        current: trend.current_rank,
+        previous: trend.previous_rank,
+        change: trend.year_over_year_change,
+        fiveYearChange: trend.five_year_change,
+        trend: trend.trend_category,
+        prediction: trend.prediction,
+        momentumScore: trend.momentum_score,
+        culturalInfluenceScore: trend.cultural_influence_score
+      });
+
+    } catch (error) {
+      console.error('Database query error:', error);
+      setResult({
+        name: searchName,
+        error: `Database error: ${error.message}`
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    result,
+    loading,
+    predictTrajectory
+  };
+};
+
+// Simple hook for getting trending names
+export const useTrendingNames = (limit = 8) => {
+  const [trendingNames, setTrendingNames] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchTrendingNames = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      console.log('📈 Fetching trending names...');
+
+      // Get names with strongest momentum
+      const { data: trendingData, error: trendingError } = await supabase
+        .from('ons_name_trends')
+        .select(`
+          current_rank,
+          trend_category,
+          year_over_year_change,
+          five_year_change,
+          momentum_score,
+          ons_baby_names!inner (
+            name,
+            gender,
+            cultural_category
+          )
+        `)
+        .in('trend_category', ['RISING FAST', 'STRONG MOMENTUM'])
+        .order('momentum_score', { ascending: false })
+        .limit(limit);
+
+      if (trendingError) {
+        console.error('Trending names error:', trendingError);
+        return;
+      }
+
+      console.log('✅ Fetched trending names:', trendingData);
+
+      const chartData = trendingData.map(item => ({
+        name: item.ons_baby_names.name,
+        category: item.ons_baby_names.gender,
+        change: `+${item.five_year_change}`,
+        trend: item.trend_category,
+        currentRank: item.current_rank,
+        momentum: item.momentum_score,
+        // Mock positions for chart (you can enhance this later with ons_name_rankings)
+        positions: [100, 90, 80, 70, 60, item.current_rank],
+        color: getNameColor(item.ons_baby_names.name)
+      }));
+
+      setTrendingNames(chartData);
+
+    } catch (error) {
+      console.error('Error fetching trending names:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit]);
+
+  return {
+    trendingNames,
+    loading,
+    fetchTrendingNames
+  };
+};
+
+// Simple hook for cultural patterns
+export const useCulturalPatterns = () => {
+  const [patterns, setPatterns] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPatterns = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      console.log('🌍 Fetching cultural patterns...');
+
+      // Get names grouped by cultural category
+      const { data: culturalData, error: culturalError } = await supabase
+        .from('ons_baby_names')
+        .select(`
+          cultural_category,
+          name,
+          gender,
+          ons_name_trends!inner (
+            current_rank,
+            trend_category,
+            year_over_year_change,
+            momentum_score
+          )
+        `)
+        .not('cultural_category', 'is', null)
+        .order('cultural_category');
+
+      if (culturalError) {
+        console.error('Cultural patterns error:', culturalError);
+        return;
+      }
+
+      console.log('✅ Fetched cultural data:', culturalData);
+
+      // Group by cultural category
+      const groupedPatterns = culturalData.reduce((acc, item) => {
+        const category = item.cultural_category;
+        if (!acc[category]) {
+          acc[category] = {
+            category,
+            names: [],
+            totalMomentum: 0,
+            risingCount: 0
+          };
+        }
+
+        const trend = item.ons_name_trends[0];
+        if (trend) {
+          acc[category].names.push({
+            name: item.name,
+            gender: item.gender,
+            rank: trend.current_rank,
+            change: trend.year_over_year_change,
+            trend: trend.trend_category,
+            momentum: trend.momentum_score || 0
+          });
+
+          if (trend.year_over_year_change > 0) {
+            acc[category].totalMomentum += trend.year_over_year_change;
+            acc[category].risingCount++;
+          }
+        }
+
+        return acc;
+      }, {});
+
+      // Sort names within each category by momentum
+      Object.values(groupedPatterns).forEach(pattern => {
+        pattern.names.sort((a, b) => (b.momentum || 0) - (a.momentum || 0));
+        pattern.names = pattern.names.slice(0, 5); // Top 5 per category
+      });
+
+      setPatterns(Object.values(groupedPatterns));
+
+    } catch (error) {
+      console.error('Error fetching cultural patterns:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    patterns,
+    loading,
+    fetchPatterns
+  };
+};
+
+// Utility function to generate consistent colors for names
+const getNameColor = (name) => {
+  const colors = [
+    '#ff6b9d', '#4ecdc4', '#ffe66d', '#a8e6cf', 
+    '#ff9999', '#87ceeb', '#dda0dd', '#98fb98',
+    '#ffa07a', '#20b2aa', '#9370db', '#32cd32'
+  ];
+  const hash = name.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Utility functions for formatting
+export const formatTrendChange = (change, trend) => {
+  if (change === 0) return { text: 'No change', color: 'text-gray-600' };
+  if (change > 0) return { 
+    text: `+${change} positions`, 
+    color: 'text-green-600',
+    badge: trend === 'RISING FAST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+  };
+  return { 
+    text: `${change} positions`, 
+    color: 'text-red-600',
+    badge: 'bg-red-100 text-red-800'
+  };
+};
+
+export const getTrendEmoji = (trend) => {
+  const emojis = {
+    'RISING FAST': '🚀',
+    'STRONG MOMENTUM': '📈',
+    'STABLE': '📊',
+    'COOLING': '📉',
+    'FALLING': '⬇️',
+    'NEW ENTRY': '✨'
+  };
+  return emojis[trend] || '📊';
+};
+
+// Test function to verify database connection
+export const testDatabaseConnection = async () => {
+  try {
+    console.log('🧪 Testing database connection...');
+    
+    const { data, error } = await supabase
+      .from('ons_baby_names')
+      .select('name, ons_name_trends(current_rank)')
+      .limit(5);
+    
+    if (error) {
+      console.error('❌ Database test failed:', error);
+      return { success: false, error };
+    }
+    
+    console.log('✅ Database test successful:', data);
+    return { success: true, data };
+    
+  } catch (error) {
+    console.error('❌ Database connection error:', error);
+    return { success: false, error };
+  }
+};
+
+export default {
+  useNameTrajectoryPredictor,
+  useTrendingNames,
+  useCulturalPatterns,
+  formatTrendChange,
+  getTrendEmoji,
+  testDatabaseConnection
+};

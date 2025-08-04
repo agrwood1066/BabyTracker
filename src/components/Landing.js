@@ -234,6 +234,12 @@ function Landing() {
             <Baby className="logo-icon" size={32} />
             <span className="logo-text">Baby Steps Planner</span>
           </div>
+          <nav className="header-nav">
+            <Link to="/blog" className="nav-link">
+              <FileText size={16} />
+              Blog
+            </Link>
+          </nav>
           <div className="header-actions">
             <button 
               className="login-btn"

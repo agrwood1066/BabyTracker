@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { supabase } from './supabaseClient';
 import './App.css';
 
@@ -17,6 +18,11 @@ import Profile from './components/Profile';
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
 import TermsOfService from './components/legal/TermsOfService';
+
+// Blog Components (available to all users)
+import Blog from './components/blog/Blog';
+import BlogPost from './components/blog/BlogPost';
+import BlogAdmin from './components/blog/BlogAdmin';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -47,11 +53,14 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="App">
+    <HelmetProvider>
+      <Router>
+        <div className="App">
         {!session ? (
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="*" element={<Navigate to="/" />} />
@@ -68,6 +77,10 @@ function App() {
                 <Route path="/hospital-bag" element={<HospitalBag />} />
                 <Route path="/names" element={<BabyNames />} />
                 <Route path="/profile" element={<Profile />} />
+                {/* Blog pages available to logged-in users too */}
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/admin/blog" element={<BlogAdmin />} />
                 {/* Legal pages available to logged-in users too */}
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
@@ -76,8 +89,9 @@ function App() {
             </main>
           </>
         )}
-      </div>
-    </Router>
+        </div>
+      </Router>
+    </HelmetProvider>
   );
 }
 

@@ -35,6 +35,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 2rem;
+  gap: 2rem;
 }
 
 .logo-section {
@@ -54,6 +55,32 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.nav-link:hover {
+  background: rgba(255, 159, 170, 0.1);
+  color: #ff9faa;
+  transform: translateY(-1px);
 }
 
 .header-actions {
@@ -1021,6 +1048,25 @@
 }
 
 @media (max-width: 768px) {
+  .header-content {
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+  
+  .header-nav {
+    flex: none;
+  }
+  
+  .nav-link {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .login-btn {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
   .footer-content {
     grid-template-columns: 1fr;
     gap: 2rem;
@@ -1033,6 +1079,14 @@
 }
 
 @media (max-width: 480px) {
+  .header-content {
+    gap: 0.5rem;
+  }
+  
+  .header-nav {
+    display: none; /* Hide blog link on very small screens to save space */
+  }
+  
   .logo-text {
     font-size: 1rem;
   }
