@@ -7,8 +7,6 @@ import {
   Eye, 
   EyeOff, 
   Save,
-  Image,
-  Tag,
   Calendar,
   BarChart3,
   Settings,

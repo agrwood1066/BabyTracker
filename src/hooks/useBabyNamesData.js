@@ -433,7 +433,7 @@ export const getTrendEmoji = (trend) => {
   return emojis[trend] || '📊';
 };
 
-export default {
+const babyNamesDataExports = {
   useTrendingNames,
   useNameTrendChecker,
   useNameTrajectoryPredictor,
@@ -443,3 +443,5 @@ export default {
   getTrendEmoji,
   trackBlogInteraction
 };
+
+export default babyNamesDataExports;

@@ -26,6 +26,7 @@ const Blog = () => {
   useEffect(() => {
     fetchPosts();
     fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, searchTerm]);
 
   const fetchPosts = async () => {

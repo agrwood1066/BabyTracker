@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Search, Loader2 } from 'lucide-react';
-import { useEnhancedBlogData, formatTrendChange, getTrendEmoji } from '../../hooks/useBabyNamesData';
+import { Loader2 } from 'lucide-react';
+import { useEnhancedBlogData } from '../../hooks/useBabyNamesData';
 
 const BabyNamesBlog2024 = () => {
   const [trajectoryName, setTrajectoryName] = useState('');
@@ -11,10 +11,7 @@ const BabyNamesBlog2024 = () => {
 
   // Supabase integration hooks
   const {
-    trendingNames: dbTrendingNames,
     trendingLoading,
-    patterns,
-    patternsLoading,
     predictTrajectory,
     trajectoryResult,
     trajectoryLoading,
@@ -77,7 +74,7 @@ const BabyNamesBlog2024 = () => {
       setFilteredNames([]);
       setShowAutocomplete(false);
     }
-  }, [trajectoryName]);
+  }, [trajectoryName, availableNames]);
 
   // Close autocomplete when clicking outside
   useEffect(() => {

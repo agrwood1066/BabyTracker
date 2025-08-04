@@ -58,6 +58,7 @@ const BlogPost = () => {
         fetchPost();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const fetchPost = async () => {
@@ -150,6 +151,8 @@ const BlogPost = () => {
         break;
       case 'copy':
         copyToClipboard(url);
+        break;
+      default:
         break;
     }
   };
