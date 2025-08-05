@@ -237,7 +237,7 @@ function Landing() {
           <nav className="header-nav">
             <Link to="/blog" className="nav-link">
               <FileText size={16} />
-              Blog
+              <span>Blog</span>
             </Link>
           </nav>
           <div className="header-actions">

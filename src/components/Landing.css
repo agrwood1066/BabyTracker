@@ -1081,14 +1081,44 @@
 @media (max-width: 480px) {
   .header-content {
     gap: 0.5rem;
+    align-items: center;
+    padding: 0 0.75rem;
   }
   
+  /* KEEP the blog button visible but optimize for space */
   .header-nav {
-    display: none; /* Hide blog link on very small screens to save space */
+    display: flex !important; /* Keep blog link visible on small screens */
+    flex: 0 0 auto;
+  }
+  
+  .nav-link {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 15px;
+  }
+  
+  .nav-link svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .logo-section {
+    flex: 0 0 auto;
   }
   
   .logo-text {
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .login-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 15px;
   }
   
   .brand-title {
@@ -1113,5 +1143,20 @@
   
   .landing-footer {
     padding: 2rem 0 1rem;
+  }
+}
+
+/* For very small screens, show icon only for blog button */
+@media (max-width: 380px) {
+  .nav-link span {
+    display: none; /* Hide "Blog" text, keep icon */
+  }
+  
+  .nav-link {
+    padding: 0.4rem;
+  }
+  
+  .nav-link svg {
+    margin: 0;
   }
 }

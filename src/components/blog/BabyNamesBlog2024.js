@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useEnhancedBlogData } from '../../hooks/useBabyNamesData';
+import './BabyNamesBlog2024.css';
 
 const BabyNamesBlog2024 = () => {
   const [trajectoryName, setTrajectoryName] = useState('');
@@ -18,24 +19,39 @@ const BabyNamesBlog2024 = () => {
     trackInteraction
   } = useEnhancedBlogData();
 
-  // Sample names for autocomplete (in a real app, this would come from Supabase)
-  const availableNames = [
-    // Top performers
-    'Noah', 'Olivia', 'Muhammad', 'Amelia', 'Oliver', 'Lily', 'Arthur', 'Isla', 'Leo', 'Ivy',
-    'George', 'Florence', 'Luca', 'Freya', 'Theodore', 'Poppy', 'Oscar', 'Ava', 'Archie', 'Elsie',
-    // Rising stars
-    'Raya', 'Bodhi', 'Maeve', 'Enzo', 'Yahya', 'Eden', 'Eloise', 'Elodie', 'Maryam', 'Vinnie',
-    'Elias', 'Nathan', 'Austin', 'Musa', 'Myles', 'Margot', 'Jude', 'Hudson', 'Sonny', 'Oakley',
-    'Otis', 'Ottilie', 'Lyra', 'Athena', 'Hazel', 'Nova', 'Nora', 'Ophelia', 'Jax', 'Atlas',
-    // Stable classics
-    'Charlie', 'Grace', 'Henry', 'Isabella', 'William', 'Sophia', 'Jack', 'Mia', 'James', 'Emily',
-    'Alfie', 'Charlotte', 'Alexander', 'Evie', 'Thomas', 'Aria', 'Lucas', 'Luna', 'Tommy', 'Mason',
-    // Additional names
-    'Hunter', 'Brody', 'Grayson', 'Willow', 'Ruby', 'Ella', 'Sophie', 'Daisy', 'Alice', 'Matilda',
-    'Rosie', 'Sienna', 'Maya', 'Eva', 'Harper', 'Phoebe', 'Millie', 'Emma', 'Jessica', 'Zara',
-    'Harry', 'Max', 'Freddie', 'Ethan', 'Joshua', 'Benjamin', 'Daniel', 'Samuel', 'Joseph', 'Jacob',
-    'Dylan', 'Toby', 'Albert', 'Ralph', 'Jasper', 'Felix', 'Sebastian', 'Reuben', 'Roman', 'Ezra'
-  ].sort();
+  // Lazy load available names for better mobile performance
+  const [availableNames, setAvailableNames] = useState([]);
+  const [namesLoaded, setNamesLoaded] = useState(false);
+
+  // Load names only when user starts typing
+  useEffect(() => {
+    if (trajectoryName.length > 0 && !namesLoaded) {
+      // Simulate async loading - in production, this could be a dynamic import
+      const loadNames = () => {
+        const names = [
+          // Top performers
+          'Noah', 'Olivia', 'Muhammad', 'Amelia', 'Oliver', 'Lily', 'Arthur', 'Isla', 'Leo', 'Ivy',
+          'George', 'Florence', 'Luca', 'Freya', 'Theodore', 'Poppy', 'Oscar', 'Ava', 'Archie', 'Elsie',
+          // Rising stars
+          'Raya', 'Bodhi', 'Maeve', 'Enzo', 'Yahya', 'Eden', 'Eloise', 'Elodie', 'Maryam', 'Vinnie',
+          'Elias', 'Nathan', 'Austin', 'Musa', 'Myles', 'Margot', 'Jude', 'Hudson', 'Sonny', 'Oakley',
+          'Otis', 'Ottilie', 'Lyra', 'Athena', 'Hazel', 'Nova', 'Nora', 'Ophelia', 'Jax', 'Atlas',
+          // Additional names...
+          'Charlie', 'Grace', 'Henry', 'Isabella', 'William', 'Sophia', 'Jack', 'Mia', 'James', 'Emily',
+          'Alfie', 'Charlotte', 'Alexander', 'Evie', 'Thomas', 'Aria', 'Lucas', 'Luna', 'Tommy', 'Mason',
+          'Hunter', 'Brody', 'Grayson', 'Willow', 'Ruby', 'Ella', 'Sophie', 'Daisy', 'Alice', 'Matilda',
+          'Rosie', 'Sienna', 'Maya', 'Eva', 'Harper', 'Phoebe', 'Millie', 'Emma', 'Jessica', 'Zara',
+          'Harry', 'Max', 'Freddie', 'Ethan', 'Joshua', 'Benjamin', 'Daniel', 'Samuel', 'Joseph', 'Jacob',
+          'Dylan', 'Toby', 'Albert', 'Ralph', 'Jasper', 'Felix', 'Sebastian', 'Reuben', 'Roman', 'Ezra'
+        ].sort();
+        setAvailableNames(names);
+        setNamesLoaded(true);
+      };
+      
+      // Small delay to prevent blocking initial render
+      setTimeout(loadNames, 100);
+    }
+  }, [trajectoryName, namesLoaded]);
 
   // Enhanced mock data to ensure 8 names always show in chart
   const mockTrendingNames = [
@@ -64,7 +80,7 @@ const BabyNamesBlog2024 = () => {
 
   // Filter names based on input
   useEffect(() => {
-    if (trajectoryName.length > 0) {
+    if (trajectoryName.length > 0 && availableNames.length > 0) {
       const filtered = availableNames.filter(name => 
         name.toLowerCase().startsWith(trajectoryName.toLowerCase())
       ).slice(0, 8); // Show max 8 suggestions

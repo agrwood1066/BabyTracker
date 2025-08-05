@@ -1,3 +1,13 @@
+/* Respect user's motion preferences for better accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .blog-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #fef7f7 0%, #f8faff 100%);
@@ -487,14 +497,29 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Mobile Responsive */
+/* Mobile Responsive - Performance Optimized */
 @media (max-width: 768px) {
+  /* Simplify gradients on mobile for better performance */
+  .blog-container {
+    background: #fef7f7; /* Simple solid color instead of gradient */
+  }
+  
   .blog-hero {
     padding: 1.5rem 1rem 2rem;
+    background: #f8faff; /* Simplified background */
+  }
+  
+  /* Remove complex pseudo-element gradients on mobile */
+  .blog-hero::before {
+    display: none; /* Remove overlay gradient for performance */
   }
   
   .blog-hero h1 {
     font-size: 2.2rem;
+    /* Simplified gradient for mobile */
+    background: #ff9faa;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   
   .blog-hero p {
@@ -506,6 +531,15 @@
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+  }
+  
+  /* Reduce blur effects on mobile */
+  .search-box,
+  .category-filter {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: none; /* Remove blur for performance */
+    border: 1px solid #ff9faa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Smaller shadow */
   }
   
   .search-box {
@@ -523,6 +557,19 @@
   .featured-content {
     grid-template-columns: 1fr;
     min-height: auto;
+    background: white; /* Solid background */
+    backdrop-filter: none; /* Remove blur */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Smaller shadow */
+  }
+  
+  /* Disable hover effects on mobile for better performance */
+  .featured-content:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Keep same shadow */
+  }
+  
+  .featured-content:hover .featured-image img {
+    transform: none; /* Disable scale on hover */
   }
   
   .featured-badge {
@@ -530,6 +577,19 @@
     left: 1rem;
     padding: 0.5rem 1rem;
     font-size: 0.8rem;
+    background: #ff9faa; /* Solid color */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Optimize post cards */
+  .post-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Lighter shadow */
+    transition: none; /* Remove transitions on mobile */
+  }
+  
+  .post-card:hover {
+    transform: none; /* No transform on hover */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   
   .featured-text {
@@ -555,9 +615,11 @@
     font-size: 0.8rem;
   }
   
+  /* Simplify CTA gradient */
   .blog-cta {
     margin: 3rem 1rem 0;
     padding: 2rem 1.5rem;
+    background: #ff9faa; /* Solid color instead of gradient */
   }
   
   .cta-content h3 {
@@ -569,9 +631,27 @@
     margin-bottom: 1.5rem;
   }
   
+  /* Reduce button effects */
   .cta-button {
     padding: 0.875rem 1.5rem;
     font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.2s ease; /* Only transition opacity */
+  }
+  
+  .cta-button:hover {
+    transform: none;
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Hardware acceleration hints for smooth scrolling */
+  .blog-container {
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+  
+  .posts-grid {
+    transform: translateZ(0); /* Force GPU acceleration */
   }
 }
 
@@ -579,6 +659,7 @@
   .posts-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
+    will-change: scroll-position; /* Only for scrolling container */
   }
   
   .post-content {
@@ -587,6 +668,25 @@
   
   .featured-content {
     margin: 0 0.5rem;
+  }
+  
+  /* Disable all non-critical animations */
+  .post-card,
+  .featured-content,
+  .cta-button {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Use CSS containment for better performance */
+  .post-card {
+    contain: layout style paint;
+  }
+  
+  /* Optimize images */
+  .post-image img,
+  .featured-image img {
+    will-change: auto; /* Don't prepare for transforms */
   }
 }
 
