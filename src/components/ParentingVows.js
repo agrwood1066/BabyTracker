@@ -6,8 +6,6 @@ import {
   HeartHandshake, 
   Edit2, 
   Trash2, 
-  MessageSquare,
-  Heart,
   Star,
   Check,
   X,
@@ -20,8 +18,6 @@ const ParentingVows = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState({});
-  const [interactions, setInteractions] = useState({});
-  const [questionVotes, setQuestionVotes] = useState({});
   const [user, setUser] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,12 +36,14 @@ const ParentingVows = () => {
     if (user?.family_id) {
       fetchCategories();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
     if (selectedCategory) {
       fetchQuestions(selectedCategory.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   const fetchUserAndFamily = async () => {

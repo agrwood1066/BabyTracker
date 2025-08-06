@@ -1,6 +1,6 @@
 # Baby Steps - Baby Tracker Web App
 
-A modern, clean pregnancy tracking web application built with React and Supabase. Features include budget planning, baby items tracking, gift wishlists, hospital bag management, and comprehensive editing capabilities.
+A modern, clean pregnancy tracking web application built with React and Supabase. Features include budget planning, baby items tracking, gift wishlists, hospital bag management, parenting discussion tools, and comprehensive editing capabilities.
 
 🔒 **Production-Ready with Enterprise-Grade Security** - Fully secured with Row Level Security policies and development/production logging separation.
 
@@ -12,8 +12,9 @@ A modern, clean pregnancy tracking web application built with React and Supabase
 - 🎁 **Gift Wishlist** - Shareable wishlist with automatic image extraction from product URLs
 - 🏥 **Hospital Bag Tracker** - Comprehensive checklist for mum, baby, and partner with editing capabilities
 - 💕 **Baby Names** - Suggest, edit, and vote on baby names with your partner
+- 💬 **Parenting Vows** - Important conversations before baby arrives with upvoting and consensus tracking
 - 👫 **Family Accounts** - Share all lists with partners and family members
-- ✏️ **Full Editing** - Edit any item across all features (Shopping List, Baby Names, Hospital Bag)
+- ✏️ **Full Editing** - Edit any item across all features (Shopping List, Baby Names, Hospital Bag, Parenting Vows)
 - 🎨 **Visual Wishlist** - Automatic product image extraction from URLs
 - 📱 **Responsive Design** - Works beautifully on mobile and desktop
 - 📊 **CSV Export** - Export your budget data for external analysis
@@ -101,6 +102,11 @@ ALTER TABLE wishlist_shares ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hospital_bag_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE baby_names ENABLE ROW LEVEL SECURITY;
 ALTER TABLE baby_name_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pregnancy_vows_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pregnancy_vows_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pregnancy_vows_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pregnancy_vows_interactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pregnancy_vows_question_votes ENABLE ROW LEVEL SECURITY;
 
 -- Create family-based access policies
 CREATE POLICY "Users can access family data" ON baby_items
@@ -141,8 +147,22 @@ The app uses Supabase with the following main tables:
 - `hospital_bag_items` - Hospital bag checklist with full editing capabilities
 - `baby_names` - Baby name suggestions with editing support
 - `baby_name_votes` - Voting on baby names
+- `pregnancy_vows_categories` - Categories for parenting discussion topics
+- `pregnancy_vows_questions` - Important questions to discuss before baby arrives
+- `pregnancy_vows_responses` - Partner responses to questions
+- `pregnancy_vows_interactions` - Upvotes and consensus tracking
 
 ## ✨ Latest Features
+
+### **NEW: Parenting Vows (Discussion Tool):**
+- **Pre-set Categories** - 6 important topics: Emotional Health, Family Boundaries, Daily Routines, Relationship, Values & Traditions, Money & Lifestyle
+- **Custom Questions** - Add your own questions to any category
+- **Partner Responses** - Both partners can add multiple responses to each question
+- **Upvoting System** - Vote on the best responses, automatically sorted by popularity
+- **Consensus Tracking** - Mark responses both partners agree on
+- **Time-based Display** - Shows "2 hours ago" instead of dates for friendlier interface
+- **Mobile-Optimized** - Horizontal scrolling categories with question counts
+- **Visual Feedback** - Color-coded responses by partner with clear consensus indicators
 
 ### **Enhanced Shopping List:**
 - **Budget Integration** - Items link directly to budget categories
@@ -162,6 +182,7 @@ The app uses Supabase with the following main tables:
 - **Baby Names** - Edit name, gender, and notes (original suggester only)
 - **Hospital Bag** - Edit all item details including category and quantity
 - **Shopping List** - Edit all fields including budget category and links
+- **Parenting Vows** - Edit and delete your own responses
 - **Consistent UI** - Blue edit buttons with intuitive workflows
 
 ## 🌐 Deployment
