@@ -9,6 +9,7 @@ import {
   Gift,
   Briefcase,
   Heart,
+  MessageSquare,
   User,
   LogOut,
   Menu,
@@ -28,6 +29,7 @@ const Navigation = () => {
     { path: '/wishlist', icon: Gift, label: 'Wishlist' },
     { path: '/hospital-bag', icon: Briefcase, label: 'Hospital Bag' },
     { path: '/names', icon: Heart, label: 'Baby Names' },
+    { path: '/parenting-vows', icon: MessageSquare, label: 'Parenting Vows' },
     { path: '/profile', icon: User, label: 'Profile' }
   ];
 
