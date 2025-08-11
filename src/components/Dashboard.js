@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Clock, Users, Sparkles } from 'lucide-react';
+import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Clock, Users, Sparkles, FileText } from 'lucide-react';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -11,7 +11,8 @@ function Dashboard() {
     babyItems: { total: 0, purchased: 0 },
     wishlist: { total: 0, purchased: 0 },
     hospitalBag: { total: 0, packed: 0 },
-    babyNames: { total: 0 }
+    babyNames: { total: 0 },
+    parentingVows: { total: 0 }
   });
   const [familyMembers, setFamilyMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +130,8 @@ function Dashboard() {
         babyItems: { total: 0, purchased: 0 },
         wishlist: { total: 0, purchased: 0 },
         hospitalBag: { total: 0, packed: 0 },
-        babyNames: { total: 0 }
+        babyNames: { total: 0 },
+        parentingVows: { total: 0 }
       });
       return;
     }
@@ -184,12 +186,19 @@ function Dashboard() {
         .select('id', { count: 'exact' })
         .eq('family_id', familyId);
       
+      // Parenting vows stats - count questions created by family
+      const { count: parentingVowsCount } = await supabase
+        .from('pregnancy_vows_questions')
+        .select('id', { count: 'exact' })
+        .eq('family_id', familyId);
+      
       setStats({
         budget: { total: budgetTotal, spent: budgetSpent },
         babyItems: { total: babyItemsTotal, purchased: babyItemsPurchased },
         wishlist: { total: wishlistTotal, purchased: wishlistPurchased },
         hospitalBag: { total: hospitalBagTotal, packed: hospitalBagPacked },
-        babyNames: { total: babyNamesCount || 0 }
+        babyNames: { total: babyNamesCount || 0 },
+        parentingVows: { total: parentingVowsCount || 0 }
       });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -266,7 +275,7 @@ function Dashboard() {
             <Package size={28} />
           </div>
           <div className="stat-content">
-            <h3>Baby Items</h3>
+            <h3>Shopping List</h3>
             <p className="stat-value">{stats.babyItems.purchased}</p>
             <p className="stat-label">of {stats.babyItems.total} collected</p>
             <div className="stat-percentage">
@@ -328,58 +337,25 @@ function Dashboard() {
             <Sparkles size={16} />
           </div>
         </Link>
+
+        <Link to="/parenting-vows" className="stat-card vows">
+          <div className="stat-icon">
+            <FileText size={28} />
+          </div>
+          <div className="stat-content">
+            <h3>Parenting Vows</h3>
+            <p className="stat-value">{stats.parentingVows.total}</p>
+            <p className="stat-label">vows created</p>
+            <div className="stat-percentage">
+              {stats.parentingVows.total > 0 ? 'Building values!' : 'Start your vows'}
+            </div>
+          </div>
+          <div className="card-sparkle">
+            <Sparkles size={16} />
+          </div>
+        </Link>
       </div>
 
-      <div className="dashboard-tips">
-        <h2><Clock size={20} /> Quick Tips & Progress</h2>
-        <div className="tips-grid">
-          {currentWeek && currentWeek < 20 && (
-            <div className="tip-card early">
-              <Clock size={20} />
-              <div>
-                <h4>Early Preparation</h4>
-                <p>Perfect time to start planning your baby registry. Give friends and family time to shop!</p>
-              </div>
-            </div>
-          )}
-          {currentWeek && currentWeek >= 28 && (
-            <div className="tip-card urgent">
-              <Briefcase size={20} />
-              <div>
-                <h4>Hospital Bag Time</h4>
-                <p>Start packing your hospital bag! Aim to have it ready by week 36.</p>
-              </div>
-            </div>
-          )}
-          {stats.budget.spent > stats.budget.total * 0.8 && (
-            <div className="tip-card warning">
-              <DollarSign size={20} />
-              <div>
-                <h4>Budget Check</h4>
-                <p>You're approaching your budget limit. Consider reviewing your spending priorities.</p>
-              </div>
-            </div>
-          )}
-          {stats.babyNames.total === 0 && (
-            <div className="tip-card suggestion">
-              <Heart size={20} />
-              <div>
-                <h4>Name Ideas</h4>
-                <p>Start collecting baby name ideas! It's fun to see what family members suggest.</p>
-              </div>
-            </div>
-          )}
-          {familyMembers.length > 0 && (
-            <div className="tip-card family">
-              <Users size={20} />
-              <div>
-                <h4>Family Collaboration</h4>
-                <p>Great! You're sharing this journey with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}. Everyone can contribute!</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
