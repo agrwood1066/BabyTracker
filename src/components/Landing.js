@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Shield,
   FileText,
-  Mail
+  Mail,
+  Instagram
 } from 'lucide-react';
 import './Landing.css';
 
@@ -452,6 +453,24 @@ function Landing() {
             </div>
             <p className="support-text">
               Questions or need help? We're here for you.
+            </p>
+          </div>
+          
+          <div className="footer-section">
+            <h3>Follow Us</h3>
+            <div className="footer-links">
+              <a 
+                href="https://www.instagram.com/babystepsplanner/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="footer-link social-link"
+              >
+                <Instagram size={16} />
+                @babystepsplanner
+              </a>
+            </div>
+            <p className="support-text">
+              Join our community of expecting parents!
             </p>
           </div>
         </div>

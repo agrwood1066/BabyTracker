@@ -48,6 +48,31 @@
   color: #ff9faa;
 }
 
+/* Social Link Styling */
+.social-link {
+  color: #e91e63 !important;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.social-link:hover {
+  color: #c2185b !important;
+  transform: translateY(-1px);
+}
+
+.footer-link.social-link {
+  color: #e91e63;
+  font-weight: 500;
+}
+
+.footer-link.social-link:hover {
+  color: #c2185b;
+  transform: translateY(-1px);
+}
+
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
