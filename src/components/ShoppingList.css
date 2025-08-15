@@ -1696,3 +1696,295 @@
     align-self: flex-end;
   }
 }
+
+/* Floating Action Button */
+.fab-add {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.fab-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.fab-add:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Inline Category Form */
+.inline-category-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 2px dashed #667eea;
+}
+
+.inline-category-form input {
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.inline-category-form input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.inline-category-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.save-category-btn,
+.cancel-category-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-category-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.save-category-btn:hover {
+  background: #45a049;
+}
+
+.cancel-category-btn {
+  background: #f44336;
+  color: white;
+}
+
+.cancel-category-btn:hover {
+  background: #da190b;
+}
+
+/* Currency Input Styles */
+.currency-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.currency-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.currency-select {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: #f5f5f5;
+  font-size: 0.9rem;
+  min-width: 85px;
+  cursor: pointer;
+  border-right: 1px solid #e0e0e0;
+}
+
+.currency-select:focus {
+  outline: none;
+  background: #e8e8e8;
+}
+
+.price-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  font-size: 0.9rem;
+  background: white;
+  min-width: 100px;
+}
+
+.price-input:focus {
+  outline: none;
+}
+
+.currency-input:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.link-input-group {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.link-url-input {
+  grid-column: 1;
+}
+
+.link-source-input {
+  grid-column: 2;
+}
+
+.link-price-group {
+  grid-column: 3;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+  max-width: 150px;
+}
+
+.link-currency-select {
+  padding: 0.5rem;
+  border: none;
+  background: #f5f5f5;
+  font-size: 0.85rem;
+  min-width: 50px;
+  cursor: pointer;
+  border-right: 1px solid #e0e0e0;
+}
+
+.link-currency-select:focus {
+  outline: none;
+  background: #e8e8e8;
+}
+
+.link-price-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  font-size: 0.9rem;
+  background: white;
+  min-width: 60px;
+  max-width: 90px;
+}
+
+.link-price-input:focus {
+  outline: none;
+}
+
+.link-price-group:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.remove-link-button {
+  grid-column: 4;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-link-button:hover {
+  background: #ff5252;
+}
+
+/* Mobile adjustments for FAB */
+@media (max-width: 768px) {
+  .fab-add {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .link-input-group {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .link-url-input,
+  .link-source-input,
+  .link-price-group,
+  .remove-link-button {
+    grid-column: 1;
+    width: 100%;
+  }
+  
+  .link-price-group {
+    max-width: none;
+  }
+  
+  .link-price-input {
+    max-width: none;
+  }
+  
+  .currency-row {
+    flex-direction: column;
+  }
+}
+
+/* Form group fixes for currency inputs */
+.form-group .currency-input input[type="number"],
+.form-group .link-price-group input[type="number"] {
+  /* Reset any inherited styles that might conflict */
+  border-radius: 0;
+  margin: 0;
+}
+
+/* Hide spinner buttons on number inputs in modals */
+.modal-content input[type="number"]::-webkit-inner-spin-button,
+.modal-content input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.modal-content input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Ensure proper alignment for all form inputs */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  font-size: 0.9rem;
+}
+
+/* Make sure currency inputs stay together on the same line */
+.currency-input {
+  width: 100%;
+  max-width: 300px;
+}
