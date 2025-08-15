@@ -248,9 +248,6 @@ function BabyNames() {
     <div className="baby-names-container">
       <div className="names-header">
         <h1>Baby Names</h1>
-        <button className="add-button" onClick={() => setShowAddName(true)}>
-          <Plus size={16} /> Add Name
-        </button>
       </div>
 
       <div className="filters-section">
@@ -434,6 +431,14 @@ function BabyNames() {
           </div>
         </div>
       )}
+
+      <button 
+        className="fab-add" 
+        onClick={() => setShowAddName(true)}
+        title="Add Name"
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }

@@ -224,9 +224,6 @@ function HospitalBag() {
     <div className="hospital-bag-container">
       <div className="bag-header">
         <h1>Hospital Bag Checklist</h1>
-        <button className="add-button" onClick={() => setShowAddItem(true)}>
-          <Plus size={16} /> Add Item
-        </button>
       </div>
 
       <div className="progress-cards">
@@ -498,6 +495,14 @@ function HospitalBag() {
           </div>
         </div>
       )}
+
+      <button 
+        className="fab-add" 
+        onClick={() => setShowAddItem(true)}
+        title="Add Item"
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }

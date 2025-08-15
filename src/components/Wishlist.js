@@ -659,9 +659,6 @@ function Wishlist() {
       <div className="wishlist-header">
         <h1>Gift Wishlist</h1>
         <div className="header-actions">
-          <button className="add-button" onClick={() => setShowAddItem(true)}>
-            <Plus size={16} /> Add Item
-          </button>
           <button className="share-button" onClick={shareLink ? () => setShowShareModal(true) : generateShareLink}>
             <Share2 size={16} /> Share List
           </button>
@@ -870,6 +867,15 @@ function Wishlist() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button */}
+      <button 
+        className="fab-add" 
+        onClick={() => setShowAddItem(true)}
+        title="Add Item"
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }

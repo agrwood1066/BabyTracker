@@ -302,7 +302,45 @@
   color: #666;
 }
 
+/* Floating Action Button */
+.fab-add {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5c2c7 0%, #e8a0a6 100%);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(245, 194, 199, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.fab-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 194, 199, 0.5);
+  background: linear-gradient(135deg, #e8a0a6 0%, #f5c2c7 100%);
+}
+
+.fab-add:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(245, 194, 199, 0.3);
+}
+
 @media (max-width: 768px) {
+  .fab-add {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 48px;
+    height: 48px;
+  }
+  
   .baby-names-container {
     padding: 1rem;
   }

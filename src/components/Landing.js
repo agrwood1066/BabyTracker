@@ -16,62 +16,11 @@ import {
   Shield,
   FileText,
   Mail,
-  Instagram
+  Instagram,
+  Menu,
+  X
 } from 'lucide-react';
 import './Landing.css';
-
-// Video Demo Component
-const VideoDemo = ({ 
-  videoSrc, 
-  webmSrc, 
-  fallbackImage, 
-  alt, 
-  className = "" 
-}) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  const handleLoad = () => setIsLoaded(true);
-  const handleError = () => setHasError(true);
-
-  if (hasError) {
-    return (
-      <div className={`video-fallback ${className}`}>
-        <div className="fallback-icon">
-          {alt.includes('Shopping') && <ShoppingCart size={48} />}
-          {alt.includes('Budget') && <DollarSign size={48} />}
-          {alt.includes('Wishlist') && <Gift size={48} />}
-          {alt.includes('Hospital') && <Briefcase size={48} />}
-          {alt.includes('Names') && <Heart size={48} />}
-        </div>
-        <p>Feature preview</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`video-container ${className}`}>
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className={`demo-video ${isLoaded ? 'loaded' : 'loading'}`}
-        onLoadedData={handleLoad}
-        onError={handleError}
-      >
-        {webmSrc && <source src={webmSrc} type="video/webm" />}
-        <source src={videoSrc} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-      {!isLoaded && (
-        <div className="video-loading">
-          <div className="loading-spinner"></div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 function Landing() {
   const [showLogin, setShowLogin] = useState(false);
@@ -81,6 +30,7 @@ function Landing() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const features = [
     {
@@ -95,10 +45,7 @@ function Landing() {
         'Mobile shopping mode for in-store use',
         'Multiple purchase links and price comparison',
         'Timeline planning with "needed by" dates'
-      ],
-      videoSrc: '/videos/shopping-list-demo.mp4',
-      webmSrc: '/videos/shopping-list-demo.webm',
-      fallbackImage: '/images/shopping-list-preview.png'
+      ]
     },
     {
       id: 'baby-names',
@@ -112,10 +59,7 @@ function Landing() {
         'Personal notes and meanings',
         'Edit suggestions from original proposer',
         'Keep track of favourites and popularity'
-      ],
-      videoSrc: '/videos/baby-names-demo.mp4',
-      webmSrc: '/videos/baby-names-demo.webm',
-      fallbackImage: '/images/baby-names-preview.png'
+      ]
     },
     {
       id: 'wishlist',
@@ -129,10 +73,7 @@ function Landing() {
         'Professional product card layout',
         'Integration with shopping list',
         'Track what\'s been purchased by whom'
-      ],
-      videoSrc: '/videos/wishlist-demo.mp4',
-      webmSrc: '/videos/wishlist-demo.webm',
-      fallbackImage: '/images/wishlist-preview.png'
+      ]
     },
     {
       id: 'budget-tracker',
@@ -146,10 +87,7 @@ function Landing() {
         'Running totals and overspend alerts',
         'CSV export for external analysis',
         'Integration with shopping list purchases'
-      ],
-      videoSrc: '/videos/budget-demo.mp4',
-      webmSrc: '/videos/budget-demo.webm',
-      fallbackImage: '/images/budget-preview.png'
+      ]
     },
     {
       id: 'hospital-bag',
@@ -163,10 +101,7 @@ function Landing() {
         'Progress tracking and completion status',
         'Edit any item to match your needs',
         'Essential items pre-populated to get started'
-      ],
-      videoSrc: '/videos/hospital-bag-demo.mp4',
-      webmSrc: '/videos/hospital-bag-demo.webm',
-      fallbackImage: '/images/hospital-bag-preview.png'
+      ]
     }
   ];
 
@@ -235,22 +170,85 @@ function Landing() {
             <Baby className="logo-icon" size={32} />
             <span className="logo-text">Baby Steps Planner</span>
           </div>
-          <nav className="header-nav">
-            <Link to="/blog" className="nav-link">
-              <FileText size={16} />
-              <span>Blog</span>
-            </Link>
-          </nav>
-          <div className="header-actions">
-            <button 
-              className="login-btn"
-              onClick={() => setShowLogin(true)}
-            >
-              Log In
-            </button>
-          </div>
+          <button 
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </header>
+
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+        <button 
+          className="mobile-menu-close"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-label="Close menu"
+        >
+          <X size={24} />
+        </button>
+        <div className="mobile-menu-content">
+          <button 
+            className="mobile-menu-item"
+            onClick={() => {
+              setShowLogin(true);
+              setMobileMenuOpen(false);
+            }}
+          >
+            Log In
+          </button>
+          <Link 
+            to="/blog" 
+            className="mobile-menu-item"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Blog
+          </Link>
+          <a 
+            href="https://www.instagram.com/babystepsplanner/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="mobile-menu-item"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Instagram
+          </a>
+          <div className="mobile-menu-section">
+            <div className="mobile-menu-section-title">Legal</div>
+            <Link 
+              to="/privacy-policy" 
+              className="mobile-menu-item mobile-menu-subitem"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Privacy Policy
+            </Link>
+            <Link 
+              to="/terms-of-service" 
+              className="mobile-menu-item mobile-menu-subitem"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Terms of Service
+            </Link>
+          </div>
+          <a 
+            href="mailto:hello@babystepsplanner.com" 
+            className="mobile-menu-item"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Support
+          </a>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="mobile-menu-overlay" 
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Hero Section with Brand Title */}
       <section className="hero-section">
@@ -363,14 +361,14 @@ function Landing() {
         </div>
       </section>
 
-      {/* Detailed Feature Sections with Video Demos */}
+      {/* Detailed Feature Sections */}
       <section className="detailed-features">
         {features.map((feature, index) => {
           const IconComponent = feature.icon;
           const isEven = index % 2 === 0;
           return (
             <div key={feature.id} id={feature.id} className={`feature-detail ${isEven ? 'feature-detail-even' : 'feature-detail-odd'}`}>
-              <div className="feature-detail-content">
+              <div className="feature-detail-content feature-detail-no-visual">
                 <div className="feature-detail-text">
                   <div className="feature-detail-header">
                     <IconComponent size={32} />
@@ -385,15 +383,6 @@ function Landing() {
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div className="feature-detail-visual">
-                  <VideoDemo
-                    videoSrc={feature.videoSrc}
-                    webmSrc={feature.webmSrc}
-                    fallbackImage={feature.fallbackImage}
-                    alt={`${feature.title} Demo`}
-                    className="feature-demo"
-                  />
                 </div>
               </div>
             </div>

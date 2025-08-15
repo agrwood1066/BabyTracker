@@ -174,9 +174,6 @@ function BudgetPlanner() {
       <div className="budget-header">
         <h1>Budget Planner</h1>
         <div className="budget-actions">
-          <button className="add-button secondary" onClick={() => setShowAddCategory(true)}>
-            <Plus size={16} /> Add Budget Category
-          </button>
           <CSVLink 
             data={csvData} 
             filename="baby-budget.csv"
@@ -411,6 +408,14 @@ function BudgetPlanner() {
           </div>
         </div>
       )}
+
+      <button 
+        className="fab-add" 
+        onClick={() => setShowAddCategory(true)}
+        title="Add Budget Category"
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }
