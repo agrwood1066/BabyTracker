@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Gift, Plus, ExternalLink, Share2, Check, Trash2, Edit2 } from 'lucide-react';
+import { Gift, Plus, ExternalLink, Share2, Check, Trash2, Edit2, ShoppingCart, Star } from 'lucide-react';
 import './Wishlist.css';
 
 function Wishlist() {
@@ -768,28 +768,23 @@ function Wishlist() {
                       title="Edit Item"
                     >
                       <Edit2 size={16} />
-                      Edit
+                      <span>Edit</span>
+                    </button>
+                    <button 
+                      className={`purchase-button ${item.purchased ? 'unpurchase' : ''}`}
+                      onClick={() => togglePurchased(item)}
+                      title={item.purchased ? 'Mark as Available' : 'Mark as Purchased'}
+                    >
+                      <Check size={16} />
+                      <span>Purchased</span>
                     </button>
                     <button 
                       className="shopping-list-button"
                       onClick={() => moveToShoppingList(item)}
                       title="Move to Shopping List"
                     >
-                      ← Shopping List
-                    </button>
-                    <button 
-                      className={`purchase-button ${item.purchased ? 'unpurchase' : ''}`}
-                      onClick={() => togglePurchased(item)}
-                    >
-                      <Check size={16} />
-                      {item.purchased ? 'Mark as Available' : 'Mark as Purchased'}
-                    </button>
-                    <button 
-                      className="delete-button"
-                      onClick={() => deleteItem(item.id)}
-                    >
-                      <Trash2 size={16} />
-                      Remove
+                      <ShoppingCart size={16} />
+                      <span>Shopping List</span>
                     </button>
                   </div>
                 </div>
@@ -813,6 +808,7 @@ function Wishlist() {
           neededByOptions={neededByOptions}
           onSave={addItem}
           onCancel={() => setShowAddItem(false)}
+          onDelete={null}
           addLink={addLink}
           updateLink={updateLink}
           removeLink={removeLink}
@@ -831,6 +827,13 @@ function Wishlist() {
           onCancel={() => {
             setShowEditItem(false);
             setEditingItem(null);
+          }}
+          onDelete={async () => {
+            if (editingItem) {
+              await deleteItem(editingItem.id);
+              setShowEditItem(false);
+              setEditingItem(null);
+            }
           }}
           addLink={addLink}
           updateLink={updateLink}
@@ -888,6 +891,7 @@ function WishlistItemModal({
   neededByOptions,
   onSave, 
   onCancel,
+  onDelete,
   addLink,
   updateLink,
   removeLink,
@@ -896,7 +900,22 @@ function WishlistItemModal({
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>{isEditing ? 'Edit Wishlist Item' : 'Add Wishlist Item'}</h2>
+        <div className="modal-header">
+          <h2>{isEditing ? 'Edit Wishlist Item' : 'Add Wishlist Item'}</h2>
+          <div className="modal-header-actions">
+            <label className="star-toggle">
+              <input
+                type="checkbox"
+                checked={newItem.starred}
+                onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
+              />
+              <Star size={22} fill={newItem.starred ? '#ffd700' : 'none'} color={newItem.starred ? '#ffd700' : '#ccc'} />
+            </label>
+            <button className="modal-close-button" onClick={onCancel} title="Cancel">
+              ×
+            </button>
+          </div>
+        </div>
         <p className="field-visibility-note">
           👁️ Fields marked with an eye icon are visible in the wishlist view
         </p>
@@ -1053,26 +1072,30 @@ function WishlistItemModal({
           </button>
         </div>
 
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={newItem.starred}
-              onChange={(e) => setNewItem({ ...newItem, starred: e.target.checked })}
-            />
-            Star this item
-            <small className="field-note">Used when moved to Shopping List</small>
-          </label>
-        </div>
-
         <div className="modal-actions">
-          <button className="cancel-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="save-button" onClick={onSave}>
+          <button className="save-button primary-hero" onClick={onSave}>
             {isEditing ? 'Update Item' : 'Add Item'}
           </button>
         </div>
+        
+        {isEditing && onDelete && (
+          <div className="delete-action-section">
+            <button 
+              className="delete-item-button" 
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete "${newItem.item_name}"? This action cannot be undone.`)) {
+                  onDelete();
+                }
+              }}
+            >
+              <Trash2 size={16} />
+              Delete Item
+            </button>
+            <p className="delete-warning">
+              This will permanently delete the item from your wishlist
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
