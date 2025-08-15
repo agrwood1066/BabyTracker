@@ -152,7 +152,17 @@ The app uses Supabase with the following main tables:
 - `pregnancy_vows_responses` - Partner responses to questions
 - `pregnancy_vows_interactions` - Upvotes and consensus tracking
 
-## ✨ Latest Features
+## ✨ Latest Features & Updates
+
+### **Shopping List UI Improvements (August 2025):**
+- **Clean Tile Design** - Modern card-based layout for shopping items
+- **Multi-Currency Support** - Support for 25+ international currencies:
+  - GBP, USD, EUR, CAD, AUD, NZD, JPY, CNY, INR, ZAR, BRL, MXN
+  - CHF, SEK, NOK, DKK, PLN, TRY, RUB, AED, SAR, SGD, HKD, KRW, THB
+- **Improved Edit Modal** - Refined layout with better spacing and cleaner inputs
+- **Mobile Optimizations** - Touch-friendly interface with tap-to-purchase
+- **Streamlined Actions** - Three-button design: Show More, Move to Wishlist, Edit
+- **Integrated Delete** - Delete functionality moved to edit modal for safety
 
 ### **NEW: Parenting Vows (Discussion Tool):**
 - **Pre-set Categories** - 6 important topics: Emotional Health, Family Boundaries, Daily Routines, Relationship, Values & Traditions, Money & Lifestyle
@@ -164,13 +174,17 @@ The app uses Supabase with the following main tables:
 - **Mobile-Optimized** - Horizontal scrolling categories with question counts
 - **Visual Feedback** - Color-coded responses by partner with clear consensus indicators
 
-### **Enhanced Shopping List:**
+### **Enhanced Shopping List (Latest Updates):**
 - **Budget Integration** - Items link directly to budget categories
-- **Shopping Mode** - Mobile-optimized view for in-store shopping
-- **Edit Capabilities** - Full editing of all item details
-- **Multiple Links** - Add alternative purchase links and prices
+- **Shopping Mode** - Clean, tile-based mobile-optimized view for in-store shopping
+- **Multi-Currency Support** - 25+ currencies supported for prices and alternative links
+- **Full Edit Capabilities** - Comprehensive editing modal with all item details
+- **Alternative Links & Prices** - Add multiple purchase options with different currencies
 - **Priority System** - High/Medium/Low priority with visual indicators
 - **Needed By** - Timeline planning for when items are required
+- **Wishlist Integration** - Seamlessly move items between Shopping List and Wishlist
+- **Clean UI** - Streamlined interface with delete functionality in edit modal
+- **Mobile-First Design** - Touch-optimized with tap-anywhere-to-purchase functionality
 
 ### **Visual Wishlist:**
 - **Automatic Images** - Product images extracted from URLs using LinkPreview.net
@@ -181,7 +195,11 @@ The app uses Supabase with the following main tables:
 ### **Comprehensive Editing:**
 - **Baby Names** - Edit name, gender, and notes (original suggester only)
 - **Hospital Bag** - Edit all item details including category and quantity
-- **Shopping List** - Edit all fields including budget category and links
+- **Shopping List** - Enhanced edit modal with:
+  - All item fields including budget category and links
+  - Multi-currency support for prices
+  - Delete functionality integrated into edit modal
+  - Clean number inputs without spinner buttons
 - **Parenting Vows** - Edit and delete your own responses
 - **Consistent UI** - Blue edit buttons with intuitive workflows
 
@@ -257,7 +275,8 @@ All security policies have been tested and verified:
 
 ### **Common Issues**
 - **White page after signup**: Profile creation handled automatically (fixed in latest version)
-- **Build failures**: Check for unused imports and variables (ESLint strict mode)
+- **Build failures**: Check for unused imports and variables (ESLint strict mode - cleaned in latest version)
+- **Currency display**: All prices now properly display with their currency symbols
 
 ## 📄 License
 

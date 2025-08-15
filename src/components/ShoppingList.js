@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, AlertCircle, Star, Eye, Edit2, Search, ChevronDown, ChevronUp, Tag, Gift } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, Star, Edit2, Search, Tag, Gift } from 'lucide-react';
 import './ShoppingList.css';
 
 // Currency configuration
@@ -59,7 +59,6 @@ function ShoppingList() {
   const [showEditItem, setShowEditItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItems, setSelectedItems] = useState(new Set());
   const [shoppingGroupBy, setShoppingGroupBy] = useState('category');
   const [wishlistItems, setWishlistItems] = useState(new Map());
 
