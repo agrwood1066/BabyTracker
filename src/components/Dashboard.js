@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Users, Sparkles, FileText, Instagram } from 'lucide-react';
+import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Users, Sparkles, FileText } from 'lucide-react';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -227,16 +227,6 @@ function Dashboard() {
                 <span>Sharing with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}</span>
               </div>
             )}
-            
-            <a 
-              href="https://www.instagram.com/babystepsplanner/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="social-link"
-              title="Follow us on Instagram"
-            >
-              <Instagram size={18} />
-            </a>
           </div>
         </div>
         
