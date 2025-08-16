@@ -36,6 +36,7 @@
   align-items: center;
   padding: 0 2rem;
   gap: 1rem;
+  width: 100%;
 }
 
 .logo-section {
@@ -96,6 +97,8 @@
   transition: all 0.3s ease;
   margin-left: auto;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;  /* Remove tap highlight on mobile */
+  touch-action: manipulation;  /* Improve touch responsiveness */
 }
 
 .mobile-menu-toggle:hover {
@@ -114,9 +117,10 @@
   height: 100vh;
   background: white;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 200;
+  z-index: 1002;  /* Higher z-index to ensure it's above overlay */
   transition: right 0.3s ease;
   overflow-y: auto;
+  pointer-events: auto;  /* Ensure menu can be clicked */
 }
 
 .mobile-menu-open {
@@ -128,6 +132,9 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;  /* Ensure content is above background */
+  pointer-events: auto;  /* Make content clickable */
 }
 
 /* Close button inside mobile menu */
@@ -145,7 +152,8 @@
   justify-content: center;
   border-radius: 8px;
   transition: all 0.2s ease;
-  z-index: 201;
+  z-index: 1003;  /* Higher than menu to ensure clickability */
+  pointer-events: auto;  /* Ensure close button is clickable */
 }
 
 .mobile-menu-close:hover {
@@ -171,12 +179,28 @@
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto;  /* Ensure menu items are clickable */
+  -webkit-tap-highlight-color: rgba(255, 159, 170, 0.2);  /* Add touch feedback */
+  position: relative;  /* Ensure proper stacking */
+  z-index: 1;  /* Above menu background */
 }
 
-.mobile-menu-item:hover {
+.mobile-menu-item:hover,
+.mobile-menu-item:active,
+.mobile-menu-item:focus {
   background: rgba(255, 159, 170, 0.1);
   color: #ff9faa;
   padding-left: 2rem;
+  outline: none;  /* Remove focus outline on mobile */
+}
+
+/* Ensure touch targets are at least 44px tall for mobile */
+@media (max-width: 768px) {
+  .mobile-menu-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
 }
 
 .mobile-menu-section {
@@ -204,10 +228,11 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 199;
+  z-index: 1001;  /* Lower than mobile-menu but high enough */
   animation: fadeIn 0.3s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;  /* Capture clicks only on overlay */
 }
 
 @keyframes fadeIn {
@@ -772,6 +797,19 @@
   
   .header-content {
     padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .logo-section {
+    flex: 0 0 auto;
+  }
+  
+  .mobile-menu-toggle {
+    flex: 0 0 auto;
+    margin-left: auto;
   }
   
   .logo-icon {
@@ -829,6 +867,33 @@
 }
 
 @media (max-width: 480px) {
+  /* Adjust carousel nav for very small screens */
+  .carousel-nav {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .carousel-nav-left {
+    left: -16px;
+  }
+  
+  .carousel-nav-right {
+    right: -16px;
+  }
+  
+  .carousel-nav svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .carousel-container {
+    margin: 0 16px;
+  }
+  
+  .feature-card {
+    min-width: 220px;
+  }
+  
   .hero-title {
     font-size: 2rem;
   }
@@ -991,20 +1056,52 @@
     flex-direction: column;
   }
   
+  /* Updated carousel navigation for mobile */
   .carousel-wrapper {
-    flex-direction: column;
-    gap: 1rem;
+    position: relative;
+    padding: 0;
   }
   
   .carousel-nav {
-    display: none;
+    /* Keep buttons visible on mobile */
+    display: flex !important;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .carousel-nav-left {
+    left: -18px;
+  }
+  
+  .carousel-nav-right {
+    right: -18px;
+  }
+  
+  .carousel-nav svg {
+    width: 20px;
+    height: 20px;
   }
   
   .carousel-container {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    display: grid;
-    overflow-x: visible;
-    gap: 1.5rem;
+    /* Keep horizontal scroll on mobile */
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1rem;
+    padding: 1rem 0.5rem;
+    /* Add padding to prevent buttons from covering cards */
+    margin: 0 20px;
+  }
+  
+  .feature-card {
+    scroll-snap-align: center;
+    min-width: 250px;
   }
   
   .header-content {

@@ -181,10 +181,17 @@ function Landing() {
       </header>
 
       {/* Mobile Menu */}
-      <div className={`mobile-menu ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+      <div 
+        className={`mobile-menu ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button 
           className="mobile-menu-close"
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMobileMenuOpen(false);
+          }}
           aria-label="Close menu"
         >
           <X size={24} />
@@ -192,7 +199,9 @@ function Landing() {
         <div className="mobile-menu-content">
           <button 
             className="mobile-menu-item"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setShowLogin(true);
               setMobileMenuOpen(false);
             }}
@@ -202,7 +211,10 @@ function Landing() {
           <Link 
             to="/blog" 
             className="mobile-menu-item"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMenuOpen(false);
+            }}
           >
             Blog
           </Link>
@@ -211,7 +223,10 @@ function Landing() {
             target="_blank" 
             rel="noopener noreferrer" 
             className="mobile-menu-item"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMenuOpen(false);
+            }}
           >
             Instagram
           </a>
@@ -220,14 +235,20 @@ function Landing() {
             <Link 
               to="/privacy-policy" 
               className="mobile-menu-item mobile-menu-subitem"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileMenuOpen(false);
+              }}
             >
               Privacy Policy
             </Link>
             <Link 
               to="/terms-of-service" 
               className="mobile-menu-item mobile-menu-subitem"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileMenuOpen(false);
+              }}
             >
               Terms of Service
             </Link>
@@ -235,7 +256,10 @@ function Landing() {
           <a 
             href="mailto:hello@babystepsplanner.com" 
             className="mobile-menu-item"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMenuOpen(false);
+            }}
           >
             Support
           </a>
