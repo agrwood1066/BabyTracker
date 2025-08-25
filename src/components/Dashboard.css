@@ -341,3 +341,22 @@
     margin: 0 auto;
   }
 }
+
+/* Dashboard Widgets */
+.dashboard-widgets {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.widget-container {
+  min-height: 250px;
+}
+
+@media (max-width: 767px) {
+  .dashboard-widgets {
+    grid-template-columns: 1fr;
+    margin-top: 1.5rem;
+  }
+}

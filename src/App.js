@@ -15,6 +15,7 @@ import HospitalBag from './components/HospitalBag';
 import BabyNames from './components/BabyNames';
 import Profile from './components/Profile';
 import ParentingVows from './components/ParentingVows';
+import AppointmentCalendar from './components/AppointmentCalendar';
 
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
@@ -77,6 +78,7 @@ function App() {
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/hospital-bag" element={<HospitalBag />} />
                 <Route path="/names" element={<BabyNames />} />
+                <Route path="/appointments" element={<AppointmentCalendar />} />
                 <Route path="/parenting-vows" element={<ParentingVows />} />
                 <Route path="/profile" element={<Profile />} />
                 {/* Blog pages available to logged-in users too */}

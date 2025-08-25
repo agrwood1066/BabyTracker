@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Users, Sparkles, FileText } from 'lucide-react';
+import AppointmentWidget from './AppointmentWidget';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -356,6 +357,13 @@ function Dashboard() {
             <Sparkles size={16} />
           </div>
         </Link>
+      </div>
+
+      {/* Dashboard Widgets */}
+      <div className="dashboard-widgets">
+        <div className="widget-container">
+          <AppointmentWidget />
+        </div>
       </div>
 
     </div>
