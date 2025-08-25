@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Calendar, Clock, MapPin, User, Bell, Plus, Edit2, Trash2, 
-  Check, X, AlertCircle, Activity, Repeat, FileText
+  Check, X, Activity, Repeat, FileText
 } from 'lucide-react';
 import './AppointmentCalendar.css';
 
@@ -16,10 +16,8 @@ function AppointmentCalendar() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [filterStatus, setFilterStatus] = useState('upcoming');
   const [showDueDatePrompt, setShowDueDatePrompt] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [userTimezone, setUserTimezone] = useState('Europe/London');
   const [metricPreferences, setMetricPreferences] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isCreatingPresets, setIsCreatingPresets] = useState(false);
   const [presetsCreated, setPresetsCreated] = useState(false);
 
@@ -67,13 +65,7 @@ function AppointmentCalendar() {
   useEffect(() => {
     loadData();
     detectTimezone();
-    
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Clean up any duplicate preset appointments (run once)
