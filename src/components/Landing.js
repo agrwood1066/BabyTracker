@@ -18,7 +18,9 @@ import {
   Mail,
   Instagram,
   Menu,
-  X
+  X,
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import './Landing.css';
 
@@ -101,6 +103,34 @@ function Landing() {
         'Progress tracking and completion status',
         'Edit any item to match your needs',
         'Essential items pre-populated to get started'
+      ]
+    },
+    {
+      id: 'appointments',
+      title: 'Appointments',
+      icon: Calendar,
+      shortDesc: 'Track all your pregnancy appointments',
+      longDesc: 'Keep track of all your pregnancy appointments with pre-populated NHS milestones. Schedule scans, midwife visits, and health checks with automatic reminders.',
+      benefits: [
+        '12 pre-populated NHS appointments based on due date',
+        'Schedule and reschedule appointments easily',
+        'Automatic email reminders before appointments',
+        'Track health metrics after each visit',
+        'List view for easy mobile access'
+      ]
+    },
+    {
+      id: 'parenting-vows',
+      title: 'Parenting Vows',
+      icon: MessageSquare,
+      shortDesc: 'Important conversations before baby arrives',
+      longDesc: 'Have meaningful discussions about parenting approaches with your partner. Cover essential topics from mental health to family boundaries, with upvoting to find consensus.',
+      benefits: [
+        '6 key parenting categories to explore',
+        'Partner responses and collaboration',
+        'Upvoting system to find agreement',
+        'Custom questions for your specific needs',
+        'Time-based tracking of discussions'
       ]
     }
   ];
@@ -336,6 +366,20 @@ function Landing() {
                   <span>Budget Tracker</span>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{width: '50%'}}></div>
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <Calendar size={16} />
+                  <span>Appointments</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '30%'}}></div>
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <MessageSquare size={16} />
+                  <span>Parenting Vows</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: '65%'}}></div>
                   </div>
                 </div>
               </div>
