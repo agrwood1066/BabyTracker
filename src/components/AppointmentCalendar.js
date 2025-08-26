@@ -521,11 +521,6 @@ function AppointmentCalendar() {
               All
             </button>
           </div>
-          
-          
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-            <Plus size={20} /> Add Appointment
-          </button>
         </div>
       </div>
 
@@ -922,6 +917,15 @@ function AppointmentCalendar() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button */}
+      <button 
+        className="fab-add" 
+        onClick={() => setShowAddModal(true)}
+        title="Add Appointment"
+      >
+        <Plus size={24} />
+      </button>
     </div>
   );
 }
