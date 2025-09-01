@@ -70,6 +70,10 @@ const PaywallModal = ({ show, trigger, onClose, customMessage }) => {
     setLoading(true);
     const url = getUpgradeUrl(selectedPlan);
     
+    // Debug log to check URL
+    console.log('Upgrade URL:', url);
+    console.log('Selected plan:', selectedPlan);
+    
     // Redirect to Stripe Checkout
     if (url && url.startsWith('http')) {
       // Add trial period parameter if promo exists
@@ -78,7 +82,12 @@ const PaywallModal = ({ show, trigger, onClose, customMessage }) => {
         : url;
       window.location.href = finalUrl;
     } else {
-      alert('Stripe checkout URL not configured yet. Please set up products in Stripe Dashboard first.');
+      // More informative error message
+      console.error('Stripe URLs not configured:', {
+        monthly: process.env.REACT_APP_STRIPE_LAUNCH_MONTHLY_URL,
+        annual: process.env.REACT_APP_STRIPE_ANNUAL_URL
+      });
+      alert('Stripe payment links are not configured. Please check environment variables.');
       setLoading(false);
     }
   };

@@ -154,8 +154,8 @@ export const SubscriptionProvider = ({ children }) => {
   const getUpgradeUrl = (priceType = 'monthly', promoCode = null) => {
     // Stripe Payment Links - simplified to one monthly option
     const urls = {
-      monthly: process.env.REACT_APP_STRIPE_LAUNCH_MONTHLY_URL,
-      annual: process.env.REACT_APP_STRIPE_ANNUAL_URL
+      monthly: process.env.REACT_APP_STRIPE_LAUNCH_MONTHLY_URL || 'https://buy.stripe.com/fZu4gzdiC2eE0Kx8opeME01',
+      annual: process.env.REACT_APP_STRIPE_ANNUAL_URL || 'https://buy.stripe.com/5kQ6oH7Yi8D2gJveMNeME00'
     };
 
     let url = urls[priceType] || urls.monthly;
