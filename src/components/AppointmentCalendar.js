@@ -174,6 +174,13 @@ function AppointmentCalendar() {
   const loadOrCreatePresetAppointments = async (profileData) => {
     if (!profileData.due_date) return;
     
+    // Check if family_id exists
+    if (!profileData.family_id) {
+      console.error('No family_id found for user. Cannot create appointments.');
+      alert('Your profile needs updating. Please contact support to fix this issue.');
+      return;
+    }
+    
     // Prevent multiple simultaneous calls from creating duplicates
     if (isCreatingPresets || presetsCreated) return;
     
