@@ -2409,6 +2409,15 @@
   margin: 0;
 }
 
+/* Shopping Header Flexbox Layout */
+.shopping-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
 /* Add Essentials Button - Inline with title */
 .add-essentials-btn {
   display: flex;

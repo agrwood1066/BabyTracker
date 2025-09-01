@@ -613,7 +613,7 @@ function ShoppingList() {
           <ShoppingCart size={28} />
           Shopping List
         </h1>
-        {/* Add Essential Items button (inline with title) */}
+        {/* Add Essential Items button (top right, inline with title) */}
         <AddEssentialsButton 
           onClick={() => setShowEssentialsPopup(true)}
           hasImported={hasImportedEssentials}
