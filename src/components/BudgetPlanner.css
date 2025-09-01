@@ -769,3 +769,69 @@
     height: 48px;
   }
 }
+
+/* ====================================== */
+/* Paywall Integration Styles */
+/* ====================================== */
+
+.fab-add.limited {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  border: 2px dashed #d1d5db !important;
+}
+
+.fab-add.limited:hover {
+  background: #e5e7eb !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 4px 12px rgba(156, 163, 175, 0.3) !important;
+}
+
+.vault-banner {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 2px dashed #9ca3af;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem auto;
+  max-width: 1000px;
+}
+
+.vault-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vault-content span {
+  flex: 1;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.unlock-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.unlock-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.category-locked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  opacity: 0.6;
+  color: #6b7280;
+}

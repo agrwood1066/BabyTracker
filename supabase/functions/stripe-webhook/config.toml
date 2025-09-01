@@ -1,0 +1,5 @@
+# Configuration for stripe-webhook Edge Function
+# This disables JWT verification since Stripe cannot send auth headers
+
+[functions.stripe-webhook]
+verify_jwt = false

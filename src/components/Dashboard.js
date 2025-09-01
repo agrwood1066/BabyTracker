@@ -1,11 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Link } from 'react-router-dom';
-import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Users, Sparkles, FileText } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, DollarSign, Package, Gift, Briefcase, Heart, Baby, Users, Sparkles, FileText, Lock, Clock, ChevronRight } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import AppointmentWidget from './AppointmentWidget';
 import './Dashboard.css';
 
+// Promo Status Banner Component
+const PromoStatusBanner = ({ setShowPaywall, setPaywallTrigger }) => {
+  const [promoStatus, setPromoStatus] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkStatus();
+  }, []);
+
+  const checkStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Get subscription status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    setSubscription(profile);
+
+    // Check promo status
+    const { data: promo } = await supabase
+      .rpc('get_user_promo_status', {
+        p_user_id: user.id
+      });
+    
+    setPromoStatus(promo);
+  };
+
+  // Show promo banner for free users with pending promo
+  if (subscription?.subscription_status === 'free' && promoStatus?.has_promo && promoStatus?.status === 'pending') {
+    return (
+      <div className="status-banner promo-available">
+        <div className="banner-content">
+          <Gift size={20} />
+          <span>
+            🎉 You have {promoStatus.total_free_days} days free waiting! 
+            Activate your special offer to unlock all Premium features.
+          </span>
+          <button 
+            className="activate-btn"
+            onClick={() => navigate('/subscribe')}
+          >
+            Activate Offer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show trial status for trial users
+  if (subscription?.subscription_status === 'trial') {
+    const daysLeft = Math.ceil(
+      (new Date(subscription.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)
+    );
+    
+    return (
+      <div className="status-banner trial-active">
+        <div className="banner-content">
+          <Clock size={20} />
+          <span>
+            Premium Trial Active • {daysLeft} days remaining
+            {promoStatus?.free_months > 0 && ` (includes ${promoStatus.free_months} month${promoStatus.free_months > 1 ? 's' : ''} free)`}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show free tier limits
+  if (subscription?.subscription_status === 'free') {
+    return (
+      <div className="status-banner free-tier">
+        <div className="banner-content">
+          <span>Free Plan • 10 items • 3 budgets • 5 names</span>
+          <button 
+            className="upgrade-btn"
+            onClick={() => {
+              setPaywallTrigger('limit');
+              setShowPaywall(true);
+            }}
+          >
+            Start 14-Day Trial
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
 function Dashboard() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({
     budget: { total: 0, spent: 0 },
@@ -19,6 +117,18 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [daysUntilDue, setDaysUntilDue] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState('limit');
+  
+  // Subscription hook
+  const { 
+    isPremium,
+    getDaysLeftInTrial,
+    getSubscriptionInfo,
+    hasFeature,
+    promoStatus,
+    checkPromoStatus
+  } = useSubscription();
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -36,31 +146,7 @@ function Dashboard() {
         
         // If profile doesn't exist, create it
         if (profileError || !profileData) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Profile not found, checking for existing family data...');
-          }
-          
-          // Check if user has existing data under their user ID
-          const { data: existingItems } = await supabase
-            .from('baby_items')
-            .select('family_id')
-            .eq('added_by', user.id)
-            .limit(1);
-          
-          let familyId;
-          if (existingItems && existingItems.length > 0) {
-            // User has existing data, use that family_id
-            familyId = existingItems[0].family_id;
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Found existing data, using family_id:', familyId);
-            }
-          } else {
-            // New user, create new family_id
-            familyId = crypto.randomUUID();
-            if (process.env.NODE_ENV === 'development') {
-              console.log('New user, created family_id:', familyId);
-            }
-          }
+          const familyId = crypto.randomUUID();
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -73,9 +159,6 @@ function Dashboard() {
             .single();
           
           if (createError) {
-            if (process.env.NODE_ENV === 'development') {
-              console.error('Error creating profile:', createError);
-            }
             throw createError;
           }
           
@@ -99,22 +182,14 @@ function Dashboard() {
           setCurrentWeek(weeksPregnant > 0 ? weeksPregnant : 0);
         }
         
-        // Fetch family members
-        if (currentProfile?.family_id) {
-          const { data: members } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('family_id', currentProfile.family_id)
-            .neq('id', user.id);
-          setFamilyMembers(members || []);
-        }
-        
         // Fetch stats
-        await fetchStats(currentProfile?.family_id);
+        await fetchAllStats(currentProfile);
+        
+        // Fetch family members
+        await fetchFamilyMembers(currentProfile);
+        
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching data:', error);
-        }
+        console.error('Error loading dashboard:', error);
       } finally {
         setLoading(false);
       }
@@ -123,35 +198,24 @@ function Dashboard() {
     loadDashboardData();
   }, []);
 
-  async function fetchStats(familyId) {
-    // Don't fetch stats if no family ID
-    if (!familyId) {
-      setStats({
-        budget: { total: 0, spent: 0 },
-        babyItems: { total: 0, purchased: 0 },
-        wishlist: { total: 0, purchased: 0 },
-        hospitalBag: { total: 0, packed: 0 },
-        babyNames: { total: 0 },
-        parentingVows: { total: 0 }
-      });
-      return;
-    }
-    
+  async function fetchAllStats(currentProfile) {
     try {
-      // Budget stats - get total budget from categories and spending from baby items
+      const familyId = currentProfile.family_id;
+      
+      // Budget stats
       const { data: budgetCategories } = await supabase
         .from('budget_categories')
         .select('expected_budget')
         .eq('family_id', familyId);
-      
+        
       const { data: budgetItems } = await supabase
         .from('baby_items')
         .select('price, purchased')
         .eq('family_id', familyId)
-        .not('budget_category_id', 'is', null);
+        .not('price', 'is', null);
       
-      const budgetTotal = budgetCategories?.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0) || 0;
-      const budgetSpent = budgetItems?.filter(item => item.purchased)
+      const totalBudget = budgetCategories?.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0) || 0;
+      const totalSpent = budgetItems?.filter(item => item.purchased)
         .reduce((sum, item) => sum + (item.price || 0), 0) || 0;
       
       // Baby items stats
@@ -160,8 +224,8 @@ function Dashboard() {
         .select('purchased')
         .eq('family_id', familyId);
       
-      const babyItemsTotal = babyItems?.length || 0;
-      const babyItemsPurchased = babyItems?.filter(item => item.purchased).length || 0;
+      const totalItems = babyItems?.length || 0;
+      const purchasedItems = babyItems?.filter(item => item.purchased).length || 0;
       
       // Wishlist stats
       const { data: wishlistItems } = await supabase
@@ -169,8 +233,8 @@ function Dashboard() {
         .select('purchased')
         .eq('family_id', familyId);
       
-      const wishlistTotal = wishlistItems?.length || 0;
-      const wishlistPurchased = wishlistItems?.filter(item => item.purchased).length || 0;
+      const totalWishlist = wishlistItems?.length || 0;
+      const purchasedWishlist = wishlistItems?.filter(item => item.purchased).length || 0;
       
       // Hospital bag stats
       const { data: hospitalBagItems } = await supabase
@@ -178,194 +242,393 @@ function Dashboard() {
         .select('packed')
         .eq('family_id', familyId);
       
-      const hospitalBagTotal = hospitalBagItems?.length || 0;
-      const hospitalBagPacked = hospitalBagItems?.filter(item => item.packed).length || 0;
+      const totalHospitalBag = hospitalBagItems?.length || 0;
+      const packedHospitalBag = hospitalBagItems?.filter(item => item.packed).length || 0;
       
       // Baby names stats
-      const { count: babyNamesCount } = await supabase
+      const { data: babyNames } = await supabase
         .from('baby_names')
-        .select('id', { count: 'exact' })
+        .select('id')
         .eq('family_id', familyId);
       
-      // Parenting vows stats - count questions created by family
-      const { count: parentingVowsCount } = await supabase
-        .from('pregnancy_vows_questions')
-        .select('id', { count: 'exact' })
+      const totalNames = babyNames?.length || 0;
+      
+      // Parenting vows stats
+      const { data: vows } = await supabase
+        .from('parenting_vows')
+        .select('id')
         .eq('family_id', familyId);
+      
+      const totalVows = vows?.length || 0;
       
       setStats({
-        budget: { total: budgetTotal, spent: budgetSpent },
-        babyItems: { total: babyItemsTotal, purchased: babyItemsPurchased },
-        wishlist: { total: wishlistTotal, purchased: wishlistPurchased },
-        hospitalBag: { total: hospitalBagTotal, packed: hospitalBagPacked },
-        babyNames: { total: babyNamesCount || 0 },
-        parentingVows: { total: parentingVowsCount || 0 }
+        budget: { total: totalBudget, spent: totalSpent },
+        babyItems: { total: totalItems, purchased: purchasedItems },
+        wishlist: { total: totalWishlist, purchased: purchasedWishlist },
+        hospitalBag: { total: totalHospitalBag, packed: packedHospitalBag },
+        babyNames: { total: totalNames },
+        parentingVows: { total: totalVows }
       });
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error fetching stats:', error);
-      }
+      console.error('Error fetching stats:', error);
     }
   }
 
-  if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+  async function fetchFamilyMembers(currentProfile) {
+    try {
+      const { data, error } = await supabase
+        .from('family_members')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            email
+          )
+        `)
+        .eq('family_id', currentProfile.family_id);
+      
+      if (!error) {
+        setFamilyMembers(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+    }
   }
 
+  const getPregnancyTrimester = () => {
+    if (!currentWeek) return null;
+    if (currentWeek <= 12) return 'First Trimester';
+    if (currentWeek <= 27) return 'Second Trimester';
+    return 'Third Trimester';
+  };
+
+  const getWeeklyTip = () => {
+    if (!currentWeek) return null;
+    const tips = {
+      8: "Time to schedule your first prenatal appointment!",
+      12: "Consider sharing your exciting news with family and friends",
+      16: "You might feel your baby's first movements soon",
+      20: "Anatomy scan time - you can find out the gender!",
+      24: "Start thinking about your birth plan preferences",
+      28: "Third trimester begins - home stretch!",
+      32: "Pack your hospital bag and prepare for baby's arrival",
+      36: "Baby is considered full-term at 37 weeks",
+      38: "Any day now! Make sure you're ready for the hospital"
+    };
+    
+    const weekKey = Object.keys(tips)
+      .map(Number)
+      .sort((a, b) => b - a)
+      .find(week => currentWeek >= week);
+    
+    return tips[weekKey] || "Your pregnancy journey is unique and beautiful!";
+  };
+
+  const calculatePercentage = (current, total) => {
+    if (!total || total === 0) return 0;
+    return Math.round((current / total) * 100);
+  };
+
+  const getProgressMessage = (percentage, type) => {
+    if (percentage === 0) {
+      switch(type) {
+        case 'budget': return 'Ready to track';
+        case 'shopping': return 'Let\'s start shopping';
+        case 'wishlist': return 'Create your wishlist';
+        case 'hospital': return 'Time to prepare';
+        case 'names': return 'Start suggesting';
+        case 'vows': return 'Begin the conversation';
+        default: return 'Get started';
+      }
+    } else if (percentage < 25) {
+      return 'Just getting started';
+    } else if (percentage < 50) {
+      return 'Making progress';
+    } else if (percentage < 75) {
+      return 'Going strong';
+    } else if (percentage < 100) {
+      return 'Almost there';
+    } else {
+      return 'Complete!';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const subscriptionInfo = getSubscriptionInfo();
+  const daysLeftInTrial = getDaysLeftInTrial();
+
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <div className="header-content">
-          <div className="welcome-section">
-            <h1>Welcome back, {profile?.full_name || 'Parent-to-be'}! ✨</h1>
-            <p className="tagline">Your pregnancy journey is looking amazing</p>
+    <div className="dashboard">
+      {/* Add Promo Status Banner */}
+      <PromoStatusBanner setShowPaywall={setShowPaywall} setPaywallTrigger={setPaywallTrigger} />
+      
+      {/* Enhanced Trial Banner with Promo Code Info */}
+      {subscriptionInfo.status.includes('Trial') && !promoStatus?.has_promo && (
+        <div className="trial-banner">
+          <div className="trial-content">
+            <span className="trial-badge">🎁</span>
+            <span className="trial-text">
+              <strong>{daysLeftInTrial} days left</strong> in your free trial
+            </span>
+            
+            <button 
+              className="trial-upgrade-btn"
+              onClick={() => {
+                setPaywallTrigger('trial');
+                setShowPaywall(true);
+              }}
+            >
+              Upgrade Now
+            </button>
           </div>
-          
-          <div className="header-actions">
+        </div>
+      )}
+
+      {/* Modern Header Section */}
+      <div className="dashboard-header-modern">
+        <div className="header-gradient">
+          <div className="header-top-row">
+            <div className="welcome-content">
+              <h1 className="welcome-title">
+                Welcome back, {profile?.full_name || 'Parent-to-be'}! ✨
+              </h1>
+              <p className="welcome-subtitle">Your pregnancy journey is looking amazing</p>
+            </div>
             {familyMembers.length > 0 && (
-              <div className="family-indicator">
+              <div className="family-badge">
                 <Users size={16} />
-                <span>Sharing with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}</span>
+                Sharing with {familyMembers.length} family member{familyMembers.length > 1 ? 's' : ''}
               </div>
             )}
           </div>
-        </div>
-        
-        {daysUntilDue !== null && (
-          <div className="pregnancy-info">
-            <div className="info-card highlight">
-              <div className="info-icon">
-                <Calendar size={24} />
+          
+          {profile?.due_date && (
+            <div className="pregnancy-cards">
+              <div className="pregnancy-card">
+                <Calendar className="card-icon" />
+                <div className="card-content">
+                  <span className="card-label">Days until due date</span>
+                  <span className="card-value">{daysUntilDue} days</span>
+                </div>
               </div>
-              <div className="info-content">
-                <p className="info-label">Days until due date</p>
-                <p className="info-value">{daysUntilDue} days</p>
-              </div>
-            </div>
-            <div className="info-card highlight">
-              <div className="info-icon">
-                <Baby size={24} />
-              </div>
-              <div className="info-content">
-                <p className="info-label">Current week</p>
-                <p className="info-value">Week {currentWeek}</p>
+              <div className="pregnancy-card">
+                <Clock className="card-icon" />
+                <div className="card-content">
+                  <span className="card-label">Current week</span>
+                  <span className="card-value">Week {currentWeek}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <div className="quick-stats">
-        <Link to="/budget" className="stat-card budget">
-          <div className="stat-icon">
-            <DollarSign size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Budget</h3>
-            <p className="stat-value">£{stats.budget.spent.toFixed(0)}</p>
-            <p className="stat-label">of £{stats.budget.total.toFixed(0)} spent</p>
-            <div className="stat-percentage">
-              {stats.budget.total > 0 ? Math.round((stats.budget.spent / stats.budget.total) * 100) : 0}% used
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-
-        <Link to="/shopping-list" className="stat-card items">
-          <div className="stat-icon">
-            <Package size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Shopping List</h3>
-            <p className="stat-value">{stats.babyItems.purchased}</p>
-            <p className="stat-label">of {stats.babyItems.total} collected</p>
-            <div className="stat-percentage">
-              {stats.babyItems.total > 0 ? Math.round((stats.babyItems.purchased / stats.babyItems.total) * 100) : 0}% complete
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-
-        <Link to="/wishlist" className="stat-card wishlist">
-          <div className="stat-icon">
-            <Gift size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Wishlist</h3>
-            <p className="stat-value">{stats.wishlist.purchased}</p>
-            <p className="stat-label">of {stats.wishlist.total} received</p>
-            <div className="stat-percentage">
-              {stats.wishlist.total > 0 ? Math.round((stats.wishlist.purchased / stats.wishlist.total) * 100) : 0}% gifted
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-
-        <Link to="/hospital-bag" className="stat-card hospital">
-          <div className="stat-icon">
-            <Briefcase size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Hospital Bag</h3>
-            <p className="stat-value">{stats.hospitalBag.packed}</p>
-            <p className="stat-label">of {stats.hospitalBag.total} packed</p>
-            <div className="stat-percentage">
-              {stats.hospitalBag.total > 0 ? Math.round((stats.hospitalBag.packed / stats.hospitalBag.total) * 100) : 0}% ready
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-
-        <Link to="/names" className="stat-card names">
-          <div className="stat-icon">
-            <Heart size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Baby Names</h3>
-            <p className="stat-value">{stats.babyNames.total}</p>
-            <p className="stat-label">names suggested</p>
-            <div className="stat-percentage">
-              {stats.babyNames.total > 0 ? 'Ideas flowing!' : 'Get started'}
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-
-        <Link to="/parenting-vows" className="stat-card vows">
-          <div className="stat-icon">
-            <FileText size={28} />
-          </div>
-          <div className="stat-content">
-            <h3>Parenting Vows</h3>
-            <p className="stat-value">{stats.parentingVows.total}</p>
-            <p className="stat-label">vows created</p>
-            <div className="stat-percentage">
-              {stats.parentingVows.total > 0 ? 'Building values!' : 'Start your vows'}
-            </div>
-          </div>
-          <div className="card-sparkle">
-            <Sparkles size={16} />
-          </div>
-        </Link>
-      </div>
-
-      {/* Dashboard Widgets */}
-      <div className="dashboard-widgets">
-        <div className="widget-container">
-          <AppointmentWidget />
+          )}
         </div>
       </div>
 
+      {/* Modern Stats Grid */}
+      <div className="stats-grid-modern">
+        <Link to="/budget" className="stat-card-modern budget">
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <DollarSign size={24} />
+            </div>
+            <span className="stat-title">Budget</span>
+            <ChevronRight className="stat-arrow" size={20} />
+          </div>
+          <div className="stat-main-value">
+            £{stats.budget.spent.toFixed(0)}
+          </div>
+          <div className="stat-subtitle">
+            of £{stats.budget.total.toFixed(0)} spent
+          </div>
+          <div className="stat-percentage">
+            <span>{calculatePercentage(stats.budget.spent, stats.budget.total)}% used</span>
+          </div>
+        </Link>
+
+        <Link to="/shopping-list" className="stat-card-modern shopping">
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <Package size={24} />
+            </div>
+            <span className="stat-title">Shopping List</span>
+            <ChevronRight className="stat-arrow" size={20} />
+          </div>
+          <div className="stat-main-value">
+            {stats.babyItems.purchased}
+          </div>
+          <div className="stat-subtitle">
+            of {stats.babyItems.total} collected
+          </div>
+          <div className="stat-percentage">
+            <span>{calculatePercentage(stats.babyItems.purchased, stats.babyItems.total)}% complete</span>
+          </div>
+        </Link>
+
+        {/* Wishlist - with premium check */}
+        <Link 
+          to={hasFeature('wishlist') ? "/wishlist" : "#"}
+          onClick={(e) => {
+            if (!hasFeature('wishlist')) {
+              e.preventDefault();
+              setPaywallTrigger('wishlist');
+              setShowPaywall(true);
+            }
+          }}
+          className={`stat-card-modern wishlist ${!hasFeature('wishlist') ? 'locked' : ''}`}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <Gift size={24} />
+            </div>
+            <span className="stat-title">Wishlist</span>
+            {hasFeature('wishlist') ? (
+              <ChevronRight className="stat-arrow" size={20} />
+            ) : (
+              <Lock className="stat-lock" size={16} />
+            )}
+          </div>
+          {hasFeature('wishlist') ? (
+            <>
+              <div className="stat-main-value">
+                {stats.wishlist.purchased}
+              </div>
+              <div className="stat-subtitle">
+                of {stats.wishlist.total} received
+              </div>
+              <div className="stat-percentage">
+                <span>{calculatePercentage(stats.wishlist.purchased, stats.wishlist.total)}% gifted</span>
+              </div>
+            </>
+          ) : (
+            <div className="stat-locked-content">
+              <span className="locked-text">Premium Feature</span>
+              <span className="locked-subtitle">Upgrade to unlock</span>
+            </div>
+          )}
+        </Link>
+
+        {/* Hospital Bag - with premium check */}
+        <Link 
+          to={hasFeature('hospital_bag') ? "/hospital-bag" : "#"}
+          onClick={(e) => {
+            if (!hasFeature('hospital_bag')) {
+              e.preventDefault();
+              setPaywallTrigger('hospital_bag');
+              setShowPaywall(true);
+            }
+          }}
+          className={`stat-card-modern hospital ${!hasFeature('hospital_bag') ? 'locked' : ''}`}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <Briefcase size={24} />
+            </div>
+            <span className="stat-title">Hospital Bag</span>
+            {hasFeature('hospital_bag') ? (
+              <ChevronRight className="stat-arrow" size={20} />
+            ) : (
+              <Lock className="stat-lock" size={16} />
+            )}
+          </div>
+          {hasFeature('hospital_bag') ? (
+            <>
+              <div className="stat-main-value">
+                {stats.hospitalBag.packed}
+              </div>
+              <div className="stat-subtitle">
+                of {stats.hospitalBag.total} packed
+              </div>
+              <div className="stat-percentage">
+                <span>{calculatePercentage(stats.hospitalBag.packed, stats.hospitalBag.total)}% ready</span>
+              </div>
+            </>
+          ) : (
+            <div className="stat-locked-content">
+              <span className="locked-text">Premium Feature</span>
+              <span className="locked-subtitle">Upgrade to unlock</span>
+            </div>
+          )}
+        </Link>
+
+        <Link to="/names" className="stat-card-modern names">
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <Baby size={24} />
+            </div>
+            <span className="stat-title">Baby Names</span>
+            <ChevronRight className="stat-arrow" size={20} />
+          </div>
+          <div className="stat-main-value">
+            {stats.babyNames.total}
+          </div>
+          <div className="stat-subtitle">
+            names suggested
+          </div>
+          <div className="stat-percentage">
+            <span>Ideas flowing!</span>
+          </div>
+        </Link>
+
+        {/* Parenting Vows - Premium feature that allows navigation */}
+        <Link 
+          to="/parenting-vows" 
+          className={`stat-card-modern vows ${!hasFeature('parenting_vows') ? 'locked' : ''}`}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-circle">
+              <Heart size={24} />
+            </div>
+            <span className="stat-title">Parenting Vows</span>
+            {hasFeature('parenting_vows') ? (
+              <ChevronRight className="stat-arrow" size={20} />
+            ) : (
+              <Lock className="stat-lock" size={16} />
+            )}
+          </div>
+          {hasFeature('parenting_vows') ? (
+            <>
+              <div className="stat-main-value">
+                {stats.parentingVows.total}
+              </div>
+              <div className="stat-subtitle">
+                vows created
+              </div>
+              <div className="stat-percentage">
+                <span>{stats.parentingVows.total > 0 ? 'Building values!' : 'Start your vows'}</span>
+              </div>
+            </>
+          ) : (
+            <div className="stat-locked-content">
+              <span className="locked-text">Premium Feature</span>
+              <span className="locked-subtitle">Upgrade to unlock</span>
+            </div>
+          )}
+        </Link>
+      </div>
+
+      {/* Appointments Widget - Constrained width */}
+      <div className="appointment-widget-container">
+        <AppointmentWidget />
+      </div>
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        show={showPaywall}
+        trigger={paywallTrigger}
+        onClose={() => setShowPaywall(false)}
+        customMessage={
+          currentWeek ? `You're in week ${currentWeek} of your pregnancy` : undefined
+        }
+      />
     </div>
   );
 }

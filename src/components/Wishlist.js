@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Gift, Plus, ExternalLink, Share2, Check, Trash2, Edit2, ShoppingCart, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
+import { Gift, Plus, ExternalLink, Share2, Check, Edit2, ShoppingCart, Star, Trash2, Lock } from 'lucide-react';
 import './Wishlist.css';
 
 function Wishlist() {
+  const navigate = useNavigate();
+  const { isPremium, hasFeature } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -34,10 +40,18 @@ function Wishlist() {
   ];
 
   useEffect(() => {
-    fetchItems();
-    checkShareLink();
+    // Always fetch budget categories first
     fetchBudgetCategories();
-  }, []);
+    
+    // Check if user has access to wishlist
+    if (!hasFeature('wishlist')) {
+      setLoading(false);  // Important: stop loading state
+      // Don't fetch items if no access
+    } else {
+      fetchItems();
+      checkShareLink();
+    }
+  }, [hasFeature]);
 
   // Extract images when items change (only when new items are added)
   useEffect(() => {
@@ -650,6 +664,57 @@ function Wishlist() {
   const unpurchasedCount = items.filter(item => !item.purchased).length;
   const purchasedCount = items.filter(item => item.purchased).length;
 
+  // Show paywall for non-premium users
+  if (!hasFeature('wishlist')) {
+    return (
+      <>
+        <div className="premium-feature-block">
+          <Lock className="lock-icon" size={48} />
+          <h2>Gift Wishlist is a Premium Feature</h2>
+          <p>
+            Create beautiful wishlists for your baby shower and share them with friends and family.
+            Track who's purchasing what and never receive duplicates!
+          </p>
+          <div className="feature-highlights">
+            <div className="highlight-item">
+              <Gift size={20} />
+              <span>Create unlimited wishlist items</span>
+            </div>
+            <div className="highlight-item">
+              <Share2 size={20} />
+              <span>Share with friends & family</span>
+            </div>
+            <div className="highlight-item">
+              <Check size={20} />
+              <span>Track purchased items</span>
+            </div>
+            <div className="highlight-item">
+              <ExternalLink size={20} />
+              <span>Auto-extract product images from links</span>
+            </div>
+          </div>
+          <button 
+            className="unlock-premium-btn"
+            onClick={() => setShowPaywall(true)}
+          >
+            Unlock Premium Features
+          </button>
+          <button 
+            className="back-btn"
+            onClick={() => navigate('/dashboard')}
+          >
+            Back to Dashboard
+          </button>
+        </div>
+        <PaywallModal 
+          show={showPaywall}
+          trigger="wishlist"
+          onClose={() => setShowPaywall(false)}
+        />
+      </>
+    );
+  }
+
   if (loading) {
     return <div className="loading">Loading wishlist...</div>;
   }
@@ -657,27 +722,30 @@ function Wishlist() {
   return (
     <div className="wishlist-container">
       <div className="wishlist-header">
-        <h1>Gift Wishlist</h1>
+        <h1>
+          <Gift size={24} />
+          Gift Wishlist
+        </h1>
         <div className="header-actions">
-          <button className="share-button" onClick={shareLink ? () => setShowShareModal(true) : generateShareLink}>
+          <button className="share-btn" onClick={shareLink ? () => setShowShareModal(true) : generateShareLink}>
             <Share2 size={16} /> Share List
           </button>
         </div>
       </div>
 
-      <div className="wishlist-summary">
-        <div className="summary-card">
-          <Gift size={24} color="#f5c2c7" />
+      <div className="wishlist-stats">
+        <div className="stat-card">
+          <Gift size={20} />
           <div>
-            <h3>{unpurchasedCount}</h3>
-            <p>Items Wanted</p>
+            <div className="stat-value">{unpurchasedCount}</div>
+            <div className="stat-label">Items Wanted</div>
           </div>
         </div>
-        <div className="summary-card">
-          <Check size={24} color="#4CAF50" />
+        <div className="stat-card">
+          <Check size={20} />
           <div>
-            <h3>{purchasedCount}</h3>
-            <p>Items Purchased</p>
+            <div className="stat-value">{purchasedCount}</div>
+            <div className="stat-label">Items Purchased</div>
           </div>
         </div>
       </div>
@@ -706,24 +774,14 @@ function Wishlist() {
           items.map(item => {
             const itemImage = getItemImage(item);
             return (
-              <div key={item.id} className={`wishlist-item ${item.purchased ? 'purchased' : ''} ${selectedItems.has(item.id) ? 'selected' : ''}`}>
-                {/* Selection Checkbox */}
-                <div className="item-selection">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.has(item.id)}
-                    onChange={() => toggleItemSelection(item.id)}
-                    className="item-checkbox"
-                  />
-                </div>
-                
-                {/* Product Image */}
-                <div className="item-image-container">
+              <div key={item.id} className={`wishlist-card ${selectedItems.has(item.id) ? 'selected' : ''}`}>
+                {/* Card Image */}
+                <div className="card-image-container">
                   {itemImage ? (
                     <img 
                       src={itemImage} 
                       alt={item.item_name}
-                      className="item-image"
+                      className="card-image"
                       onError={(e) => {
                         e.target.style.display = 'none';
                         e.target.nextSibling.style.display = 'flex';
@@ -731,60 +789,71 @@ function Wishlist() {
                     />
                   ) : null}
                   <div 
-                    className="item-image-placeholder" 
+                    className="placeholder-image" 
                     style={{ display: itemImage ? 'none' : 'flex' }}
                   >
-                    <Gift size={32} color="#ddd" />
+                    <Gift className="placeholder-icon" />
+                  </div>
+                  {item.purchased && (
+                    <div className="purchased-badge">
+                      <Check size={12} /> Purchased
+                    </div>
+                  )}
+                  {/* Selection Checkbox */}
+                  <div className="item-selection">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.has(item.id)}
+                      onChange={() => toggleItemSelection(item.id)}
+                      className="item-checkbox"
+                    />
                   </div>
                 </div>
                 
-                <div className="item-content">
-                  <div className="item-header">
-                    <h3>{item.item_name}</h3>
-                    {item.price && <span className="price">£{item.price.toFixed(2)}</span>}
-                  </div>
+                {/* Card Content */}
+                <div className="card-content">
+                  <h3 className="card-title">{item.item_name}</h3>
+                  {item.price && <div className="card-price">£{item.price.toFixed(2)}</div>}
                   {item.description && (
-                    <p className="item-description">{item.description}</p>
+                    <p className="card-description">{item.description}</p>
                   )}
                   {item.link && (
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="item-link">
-                      <ExternalLink size={16} /> View Item
+                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="view-item-link">
+                      <ExternalLink size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                      View item
                     </a>
                   )}
-                  <div className="item-footer">
+                  <div className="card-meta">
                     <span className="added-by">
-                      Added by {item.profiles?.full_name || item.profiles?.email}
+                      Added by {item.profiles?.full_name || item.profiles?.email?.split('@')[0] || 'User'}
                     </span>
-                    {item.purchased && item.purchased_by && (
-                      <span className="purchased-by">
-                        Purchased by {item.purchased_by.full_name || item.purchased_by.email}
-                      </span>
-                    )}
                   </div>
-                  <div className="item-actions">
+                  
+                  {/* Card Actions */}
+                  <div className="card-actions">
                     <button 
-                      className="edit-button"
+                      className="action-btn edit-btn"
                       onClick={() => editItem(item)}
                       title="Edit Item"
                     >
-                      <Edit2 size={16} />
-                      <span>Edit</span>
+                      <Edit2 size={12} />
+                      Edit
                     </button>
                     <button 
-                      className={`purchase-button ${item.purchased ? 'unpurchase' : ''}`}
+                      className={`action-btn purchase-btn ${item.purchased ? 'purchased' : ''}`}
                       onClick={() => togglePurchased(item)}
                       title={item.purchased ? 'Mark as Available' : 'Mark as Purchased'}
                     >
-                      <Check size={16} />
-                      <span>Purchased</span>
+                      <Check size={12} />
+                      Purchased
                     </button>
                     <button 
-                      className="shopping-list-button"
+                      className="action-btn shopping-btn"
                       onClick={() => moveToShoppingList(item)}
                       title="Move to Shopping List"
                     >
-                      <ShoppingCart size={16} />
-                      <span>Shopping List</span>
+                      <ShoppingCart size={12} />
+                      Shopping List
                     </button>
                   </div>
                 </div>
@@ -792,10 +861,13 @@ function Wishlist() {
             );
           })
         ) : (
-          <div className="no-items">
-            <Gift size={48} color="#ccc" />
-            <p>No items in your wishlist yet!</p>
+          <div className="empty-state">
+            <Gift size={48} />
+            <h3>No items in your wishlist yet!</h3>
             <p>Add items you'd love to receive for your baby shower.</p>
+            <button className="add-first-btn" onClick={() => setShowAddItem(true)}>
+              Add Your First Item
+            </button>
           </div>
         )}
       </div>

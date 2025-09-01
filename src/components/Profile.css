@@ -527,23 +527,285 @@
 }
 
 .confirm-delete-button {
-  background: #dc2626;
-  color: white;
+  background: #dc2626 !important;
+  color: white !important;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .confirm-delete-button:hover:not(:disabled) {
-  background: #b91c1c;
+  background: #b91c1c !important;
+}
+
+/* Ensure visibility in modal */
+.deletion-modal .confirm-delete-button {
+  background: #dc2626 !important;
+  color: white !important;
 }
 
 .confirm-delete-button:disabled,
 .cancel-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Subscription Section Styles */
+.subscription-section {
+  background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%);
+  border: 2px solid #e8d5e8;
+}
+
+.subscription-status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.status-header {
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.status-badge.gold {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #664d00;
+}
+
+.status-badge.green {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: white;
+}
+
+.status-badge.blue {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+}
+
+.status-badge.orange {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  color: white;
+}
+
+.status-badge.gray {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.trial-info,
+.lifetime-info,
+.active-subscription,
+.free-plan-info,
+.promo-code-info {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.trial-info svg,
+.lifetime-info svg,
+.active-subscription svg,
+.free-plan-info svg,
+.promo-code-info svg {
+  color: #7c3aed;
+  flex-shrink: 0;
+}
+
+.trial-expires,
+.next-billing,
+.promo-benefit {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.granted-by {
+  color: #7c3aed;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.subscription-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.primary-action-btn,
+.manage-subscription-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.primary-action-btn {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+}
+
+.primary-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.manage-subscription-btn {
+  background: white;
+  border: 2px solid #e5e7eb;
+  color: #374151;
+}
+
+.manage-subscription-btn:hover {
+  background: #f9fafb;
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+
+.billing-note,
+.trial-note {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.features-comparison {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.features-comparison h4 {
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.feature-item .check {
+  color: #22c55e;
+}
+
+.feature-item .x {
+  color: #ef4444;
+}
+
+.upgrade-button-inline {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.upgrade-button-inline:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Clean Active Subscription Styles */
+.active-subscription-clean {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.subscription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.plan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-info h3 {
+  margin: 0;
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.price-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.price-display .price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.price-display .period {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pricing-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+
+.pricing-badge svg {
+  width: 14px;
+  height: 14px;
 }
 
 @media (max-width: 768px) {
@@ -582,5 +844,15 @@
   
   .modal-overlay {
     padding: 0.5rem;
+  }
+  
+  .subscription-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .pricing-badge {
+    align-self: flex-start;
   }
 }

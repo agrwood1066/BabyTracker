@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './Login.css';
 
@@ -8,6 +8,18 @@ function Login() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoMessage, setPromoMessage] = useState('');
+
+  // Check URL params for promo code
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      setPromoCode(code.toUpperCase());
+      setIsSignUp(true); // Default to signup if promo code present
+    }
+  }, []);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -34,8 +46,48 @@ function Login() {
           console.log('SignUp Success');
         }
 
+        // If signup successful and we have a promo code, apply it
+        if (signUpData.user && promoCode) {
+          try {
+            const { data, error } = await supabase.rpc('apply_promo_code', {
+              p_user_id: signUpData.user.id,
+              p_code: promoCode
+            });
+            
+            if (data && data.success) {
+              setPromoMessage(`✅ ${data.message}`);
+            } else if (data && data.error) {
+              setPromoMessage(`⚠️ Promo code: ${data.error}`);
+            }
+          } catch (promoError) {
+            console.error('Promo code error:', promoError);
+          }
+        }
+
+        // Auto sign in after successful signup
         if (signUpData.user) {
-          setMessage('Sign up successful! Please check your email for verification link.');
+          setMessage('Sign up successful! Signing you in...');
+          
+          // Wait a moment for the database to sync
+          setTimeout(async () => {
+            try {
+              const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+              });
+              
+              if (!signInError && signInData.user) {
+                setMessage('Welcome! Redirecting...');
+                setTimeout(() => {
+                  window.location.reload(); // Refresh to load the app
+                }, 500);
+              } else {
+                setMessage('Sign up successful! Please sign in.');
+              }
+            } catch (err) {
+              setMessage('Sign up successful! Please sign in.');
+            }
+          }, 1000);
         } else {
           setMessage('Sign up initiated. Please check your email for verification link.');
         }
@@ -97,6 +149,19 @@ function Login() {
               minLength={6}
             />
           </div>
+          {isSignUp && (
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Promo Code (optional)"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              />
+              {promoCode && (
+                <small className="promo-hint" style={{ color: '#666', fontSize: '0.85rem' }}>Code: {promoCode}</small>
+              )}
+            </div>
+          )}
           <button type="submit" disabled={loading}>
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
@@ -116,8 +181,14 @@ function Login() {
           </button>
         </p>
         
+        {promoMessage && (
+          <div className="promo-success-message" style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f0f9ff', borderRadius: '8px', color: '#0369a1', fontSize: '0.9rem' }}>
+            {promoMessage}
+          </div>
+        )}
+        
         {message && (
-          <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
+          <div className={`message ${message.includes('Error') || message.includes('error') ? 'error' : 'success'}`}>
             {message}
           </div>
         )}

@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Briefcase, Plus, Check, Trash2, Baby, UserCheck, Users, Edit2 } from 'lucide-react';
+import { Briefcase, Plus, Check, Trash2, Baby, UserCheck, Users, Edit2, Lock } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import './HospitalBag.css';
 
 function HospitalBag() {
+  // Subscription integration
+  const { isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -220,6 +226,60 @@ function HospitalBag() {
     return <div className="loading">Loading hospital bag...</div>;
   }
 
+  // Free users see template only
+  if (!isPremium()) {
+    const defaultItems = [
+      { name: 'Comfortable pyjamas', for: 'Mum' },
+      { name: 'Toiletries', for: 'Mum' },
+      { name: 'Snacks & drinks', for: 'Mum' },
+      { name: 'Newborn onesies (3)', for: 'Baby' },
+      { name: 'Nappies', for: 'Baby' },
+      { name: 'Going home outfit', for: 'Baby' },
+      { name: 'Change of clothes', for: 'Partner' },
+      { name: 'Snacks', for: 'Partner' },
+      { name: 'Entertainment', for: 'Partner' }
+    ];
+    
+    return (
+      <div className="hospital-bag-container">
+        <div className="bag-header">
+          <h1>Hospital Bag Checklist</h1>
+        </div>
+        
+        <div className="premium-notice">
+          <Lock size={32} />
+          <h2>Customise Your Hospital Bag with Premium</h2>
+          <p>Free users can view this template checklist. Premium members can customise it for their specific needs!</p>
+          <button 
+            onClick={() => setShowPaywall(true)}
+            className="unlock-button"
+          >
+            Unlock Customisation
+          </button>
+        </div>
+        
+        <div className="template-items">
+          <h3>Essential Items Template</h3>
+          {defaultItems.map((item, index) => (
+            <div className="item-readonly" key={index}>
+              <Check size={16} color="#ccc" />
+              <span>{item.name}</span>
+              <span className="item-tag">{item.for}</span>
+            </div>
+          ))}
+        </div>
+        
+        <PaywallModal
+          show={showPaywall}
+          trigger="hospital_bag"
+          onClose={() => setShowPaywall(false)}
+          customMessage="Customise your hospital bag checklist with premium access!"
+        />
+      </div>
+    );
+  }
+
+  // Premium users get full functionality
   return (
     <div className="hospital-bag-container">
       <div className="bag-header">

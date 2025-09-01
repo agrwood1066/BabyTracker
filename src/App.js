@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { supabase } from './supabaseClient';
+import { SubscriptionProvider } from './hooks/useSubscription';
 import './App.css';
 
 // Components
@@ -16,6 +17,11 @@ import BabyNames from './components/BabyNames';
 import Profile from './components/Profile';
 import ParentingVows from './components/ParentingVows';
 import AppointmentCalendar from './components/AppointmentCalendar';
+import SubscriptionTest from './components/SubscriptionTest';
+import SubscriptionSuccess from './components/SubscriptionSuccess';
+import SubscriptionActivation from './components/SubscriptionActivation';
+import InfluencerDashboard from './components/InfluencerDashboard';
+import ResetPassword from './components/ResetPassword';
 
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
@@ -56,8 +62,9 @@ function App() {
 
   return (
     <HelmetProvider>
-      <Router>
-        <div className="App">
+      <SubscriptionProvider>
+        <Router>
+          <div className="App">
         {!session ? (
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -65,6 +72,10 @@ function App() {
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/subscription/activate" element={<SubscriptionActivation />} />
+            <Route path="/influencer/:code" element={<InfluencerDashboard />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (
@@ -81,6 +92,9 @@ function App() {
                 <Route path="/appointments" element={<AppointmentCalendar />} />
                 <Route path="/parenting-vows" element={<ParentingVows />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/subscription-test" element={<SubscriptionTest />} />
+                <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                <Route path="/subscription/activate" element={<SubscriptionActivation />} />
                 {/* Blog pages available to logged-in users too */}
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
@@ -93,8 +107,9 @@ function App() {
             </main>
           </>
         )}
-        </div>
-      </Router>
+          </div>
+        </Router>
+      </SubscriptionProvider>
     </HelmetProvider>
   );
 }

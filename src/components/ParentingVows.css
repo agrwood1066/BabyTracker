@@ -618,3 +618,166 @@
 .response-box {
   animation: slideIn 0.3s ease;
 }
+
+/* Premium Lock Screen Styles */
+.premium-lock-screen {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.lock-icon-wrapper {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 2rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-icon {
+  color: #9ca3af;
+}
+
+.premium-lock-screen h2 {
+  font-size: 2rem;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.lock-description {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sample-preview {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.sample-preview h3 {
+  color: #374151;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.sample-categories {
+  display: grid;
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.sample-category {
+  display: flex;
+  gap: 1rem;
+  align-items: start;
+}
+
+.sample-category .category-icon {
+  width: 24px;
+  height: 24px;
+  color: #8b5cf6;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.sample-category h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.sample-category p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.premium-benefits {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3f4f6 100%);
+  border: 2px solid #ddd6fe;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.premium-benefits h3 {
+  color: #6b21a8;
+  margin-bottom: 1rem;
+}
+
+.premium-benefits ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.premium-benefits li {
+  padding: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.unlock-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.unlock-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+}
+
+.button-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.premium-note {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Mobile responsiveness for lock screen */
+@media (max-width: 768px) {
+  .sample-categories {
+    gap: 1rem;
+  }
+  
+  .premium-lock-screen {
+    padding: 1rem;
+  }
+  
+  .lock-description {
+    font-size: 1rem;
+  }
+  
+  .unlock-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

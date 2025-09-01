@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import { 
   Plus, 
   ChevronUp, 
@@ -9,11 +11,20 @@ import {
   Star,
   Check,
   X,
-  Save
+  Save,
+  Lock,
+  Sparkles,
+  Heart,
+  Users
 } from 'lucide-react';
 import './ParentingVows.css';
 
 const ParentingVows = () => {
+  // Subscription hook
+  const { isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  
+  // Existing state
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -487,6 +498,96 @@ const ParentingVows = () => {
     return <div className="loading">Loading your parenting vows...</div>;
   }
 
+  // Premium check - if not premium, show lock screen
+  if (!isPremium()) {
+    return (
+      <div className="parenting-vows-container">
+        <div className="vows-header">
+          <HeartHandshake className="header-icon" size={32} />
+          <h1>Parenting Values & Vows</h1>
+        </div>
+
+        <div className="premium-lock-screen">
+          <div className="lock-icon-wrapper">
+            <Lock size={64} className="lock-icon" />
+          </div>
+          
+          <h2>Create Your Family's Parenting Philosophy</h2>
+          
+          <p className="lock-description">
+            Build a shared vision for raising your child with our guided parenting values framework
+          </p>
+
+          <div className="sample-preview">
+            <h3>What You'll Get:</h3>
+            <div className="sample-categories">
+              <div className="sample-category">
+                <Star className="category-icon" />
+                <div>
+                  <h4>Daily Routines</h4>
+                  <p>Agree on bedtime rituals, feeding approaches, and daily structure</p>
+                </div>
+              </div>
+              <div className="sample-category">
+                <Heart className="category-icon" />
+                <div>
+                  <h4>Education & Development</h4>
+                  <p>Align on screen time, learning methods, and milestone approaches</p>
+                </div>
+              </div>
+              <div className="sample-category">
+                <HeartHandshake className="category-icon" />
+                <div>
+                  <h4>Discipline & Boundaries</h4>
+                  <p>Create consistent approaches to behaviour and consequences</p>
+                </div>
+              </div>
+              <div className="sample-category">
+                <Users className="category-icon" />
+                <div>
+                  <h4>Family Values</h4>
+                  <p>Define core values and traditions you want to pass on</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-benefits">
+            <h3>Premium Features:</h3>
+            <ul>
+              <li>✅ Create unlimited parenting value categories</li>
+              <li>✅ Add discussion questions for each topic</li>
+              <li>✅ Track both partners' responses</li>
+              <li>✅ See where you align and differ</li>
+              <li>✅ Export your parenting philosophy as PDF</li>
+              <li>✅ Share with caregivers and family</li>
+            </ul>
+          </div>
+
+          <button 
+            className="unlock-button"
+            onClick={() => setShowPaywall(true)}
+          >
+            <Sparkles className="button-icon" />
+            Unlock Parenting Values
+          </button>
+
+          <p className="premium-note">
+            Join thousands of couples creating stronger partnerships through aligned parenting
+          </p>
+        </div>
+
+        <PaywallModal
+          show={showPaywall}
+          trigger="parenting_vows"
+          onClose={() => setShowPaywall(false)}
+          customMessage="Create your family's parenting philosophy with Premium"
+        />
+      </div>
+    );
+  }
+
+  // Premium users get full functionality
   return (
     <div className="parenting-vows-container">
       <div className="vows-header">

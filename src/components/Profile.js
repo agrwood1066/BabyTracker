@@ -12,11 +12,32 @@ import {
   FileText, 
   Trash2, 
   AlertTriangle,
-  HelpCircle
+  HelpCircle,
+  Lock,
+  Crown,
+  CreditCard,
+  Calendar,
+  AlertCircle,
+  X,
+  Gift
 } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import './Profile.css';
 
 function Profile() {
+  // Enhanced subscription integration with Stripe sync
+  const { 
+    isPremium, 
+    getSubscriptionInfo, 
+    getDaysLeftInTrial, 
+    subscription,
+    hasStripeIntegration,
+    isSubscriptionSynced,
+    refreshSubscription 
+  } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -282,6 +303,11 @@ function Profile() {
     }
   }
 
+  function handleManageSubscription() {
+    // Open Stripe billing portal in new tab
+    window.open('https://billing.stripe.com/p/login/5kQ6oH7Yi8D2gJveMNeME00', '_blank');
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut();
   }
@@ -335,19 +361,318 @@ function Profile() {
         </button>
       </div>
       
+      {/* Enhanced Subscription Management Section with Stripe Integration */}
+      <div className="profile-section subscription-section">
+      <h2>
+      <Crown size={20} /> 
+      Subscription & Billing
+      </h2>
+      
+      {(() => {
+      const subInfo = getSubscriptionInfo();
+      const daysLeft = getDaysLeftInTrial();
+      const hasStripe = hasStripeIntegration;
+      const isSynced = isSubscriptionSynced();
+      
+      return (
+      <>
+      {/* Stripe Integration Status */}
+      {hasStripe && (
+      <div className={`sync-status-card ${isSynced ? 'synced' : 'warning'}`}>
+      <div className="sync-header">
+          {isSynced ? (
+            <><Check size={16} /> Synced with Stripe</>
+          ) : (
+            <><AlertCircle size={16} /> Sync Issue Detected</>
+        )}
+      <button 
+        className="refresh-btn"
+      onClick={() => refreshSubscription()}
+      title="Refresh subscription data"
+      >
+      ↻
+      </button>
+      </div>
+      {!isSynced && (
+      <p className="sync-warning">
+      Your subscription status may not be up to date. Click refresh or contact support if issues persist.
+      </p>
+      )}
+      </div>
+      )}
+
+      {/* Enhanced Subscription Status Card */}
+      <div className={`subscription-status-card enhanced ${subInfo.color}`}>
+      <div className="status-header">
+      <span className={`status-badge ${subInfo.color}`}>
+      {subInfo.badge} {subInfo.status}
+      </span>
+      {hasStripe && (
+      <span className="stripe-badge">Stripe Connected</span>
+      )}
+      </div>
+      
+      {/* Detailed subscription information */}
+      <div className="subscription-details">
+      <p className="details-text">{subInfo.details}</p>
+      </div>
+
+      {/* Trial Information with enhanced details */}
+      {subInfo.status.includes('Trial') && (
+      <div className="trial-info enhanced">
+      <Calendar size={16} />
+      <div className="trial-details">
+          <strong>
+              {subscription?.promo_months_granted 
+                ? `Extended ${subscription.promo_months_granted}-Month Trial`
+                : 'Free Trial'
+              }
+          </strong>
+        <p className="days-remaining">
+          <span className="days-number">{daysLeft}</span> days remaining
+      </p>
+      
+      {/* Enhanced trial end date display */}
+        {(() => {
+            let trialEndDate;
+              if (subscription?.stripe_trial_end) {
+                trialEndDate = new Date(subscription.stripe_trial_end);
+              } else if (subscription?.promo_months_granted && subscription?.created_at) {
+                const createdDate = new Date(subscription.created_at);
+              trialEndDate = new Date(createdDate.setMonth(createdDate.getMonth() + subscription.promo_months_granted));
+          } else if (subscription?.trial_ends_at) {
+            trialEndDate = new Date(subscription.trial_ends_at);
+        }
+        
+        if (trialEndDate) {
+        return (
+        <p className="trial-expires">
+            <strong>Expires:</strong> {trialEndDate.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                  day: 'numeric',
+                    month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                );
+            }
+          return null;
+        })()} 
+      
+      {/* Promo code information */}
+      {subscription?.promo_code_used && (
+      <div className="promo-info">
+        <Gift size={14} />
+          <span>Promo code: <strong>{subscription.promo_code_used}</strong></span>
+      </div>
+      )}
+      </div>
+      </div>
+      )}
+      
+      {/* Clean Active Subscription Display */}
+      {(subInfo.status === 'Monthly' || subInfo.status === 'Annual') && (
+      <div className="active-subscription-clean">
+        <div className="subscription-header">
+          <div className="plan-info">
+            <h3>{subInfo.status} Plan</h3>
+            <div className="price-display">
+              <span className="price">
+                £{subscription?.subscription_plan === 'premium_annual' ? '69.99' : 
+                   (subscription?.locked_in_price || '6.99')}
+              </span>
+              <span className="period">/{subInfo.status === 'Annual' ? 'year' : 'month'}</span>
+            </div>
+          </div>
+          
+          {/* Launch pricing badge */}
+          {subscription?.locked_in_price === 6.99 && (
+            <div className="pricing-badge">
+              <Crown size={14} />
+              <span>Launch Price</span>
+            </div>
+          )}
+        </div>
+      </div>
+      )}
+      
+      {/* Enhanced Lifetime Premium */}
+      {subInfo.status === 'Lifetime Premium' && (
+      <div className="lifetime-info enhanced">
+      <Crown size={24} className="crown-icon" />
+      <div className="lifetime-details">
+      <h3>Lifetime Premium Access</h3>
+        <p>You have unlimited access to all premium features forever!</p>
+      <div className="lifetime-benefits">
+        <p>✨ Granted as an early supporter</p>
+          <p>🎉 No recurring charges</p>
+          <p>👑 VIP status</p>
+      </div>
+      </div>
+      </div>
+      )}
+        
+        {/* Enhanced Free Plan Display */}
+        {subInfo.status === 'Free' && (
+          <div className="free-plan-info enhanced">
+          <div className="free-limits">
+            <AlertCircle size={20} />
+          <div>
+          <h3>Free Plan Limits</h3>
+          <ul className="limit-list">
+              <li>10 shopping items</li>
+              <li>3 budget categories</li>
+            <li>5 baby names</li>
+          </ul>
+          </div>
+        </div>
+      
+      {subscription?.stripe_subscription_status === 'canceled' && (
+          <div className="canceled-info">
+            <p>Your subscription was canceled. Upgrade anytime to restore full access.</p>
+        </div>
+      )}
+      </div>
+      )}
+      </div>
+      
+      {/* Enhanced Action Buttons */}
+      <div className="subscription-actions enhanced">
+      {subInfo.status === 'Free' && (
+      <button 
+        className="primary-action-btn upgrade"
+          onClick={() => setShowPaywall(true)}
+          >
+              <Crown size={16} />
+                Upgrade to Premium
+                </button>
+                )}
+                
+                {(subInfo.status === 'Monthly' || subInfo.status === 'Annual' || subInfo.status.includes('Trial')) && hasStripe && (
+                  <>
+                    <button 
+                      className="manage-subscription-btn"
+                      onClick={handleManageSubscription}
+                    >
+                      <CreditCard size={16} />
+                      Manage Subscription in Stripe
+                    </button>
+                    <p className="billing-note">
+                      {subInfo.status.includes('Trial') 
+                        ? 'Set up payment methods or manage your trial in Stripe'
+                        : 'Update payment methods, view invoices, or cancel your subscription'
+                      }
+                    </p>
+                  </>
+                )}
+                
+                {subInfo.status.includes('Trial') && (
+                  <>
+                    <button 
+                      className="primary-action-btn upgrade"
+                      onClick={() => setShowPaywall(true)}
+                    >
+                      <Crown size={16} />
+                      {daysLeft <= 3 ? 'Upgrade Before Trial Ends' : 'Upgrade Now'}
+                    </button>
+                    <p className="trial-note">
+                      {daysLeft <= 3 
+                        ? 'Your trial ends soon! Upgrade to continue using premium features.'
+                        : 'Skip the trial and unlock all premium features today'
+                      }
+                    </p>
+                  </>
+                )}
+              </div>
+              
+              {/* Enhanced Features Comparison */}
+              <div className="features-comparison enhanced">
+                <h4>Your Plan Features</h4>
+                <div className="features-grid">
+                  <div className="feature-category">
+                    <h5>Core Features</h5>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <X size={16} className="x" />}
+                      <span>Unlimited Shopping Items</span>
+                      {!isPremium() && <span className="limit">(10 limit)</span>}
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <X size={16} className="x" />}
+                      <span>Unlimited Budget Categories</span>
+                      {!isPremium() && <span className="limit">(3 limit)</span>}
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <X size={16} className="x" />}
+                      <span>Unlimited Baby Names</span>
+                      {!isPremium() && <span className="limit">(5 limit)</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="feature-category">
+                    <h5>Premium Features</h5>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <Lock size={16} className="lock" />}
+                      <span>Family Sharing & Collaboration</span>
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <Lock size={16} className="lock" />}
+                      <span>Gift Wishlist Creation</span>
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <Lock size={16} className="lock" />}
+                      <span>Hospital Bag Customisation</span>
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <Lock size={16} className="lock" />}
+                      <span>Parenting Vows</span>
+                    </div>
+                    <div className="feature-item">
+                      {isPremium() ? <Check size={16} className="check" /> : <Lock size={16} className="lock" />}
+                      <span>PDF & Excel Export</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()} 
+      </div>
+      
       <div className="profile-section">
         <h2><Users size={20} /> Family Account</h2>
         
-        <div className="family-code-section">
-          <h3>Your Family Code</h3>
-          <p>Share this code with your partner or family members so they can join your pregnancy journey and share all your planning data!</p>
-          <div className="code-display">
-            <span className="family-code">{familyCode || 'Loading...'}</span>
-            <button onClick={copyFamilyCode} className="copy-button">
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? 'Copied!' : 'Copy'}
+        {!isPremium() ? (
+          <div className="premium-notice">
+            <Lock size={32} />
+            <h3>Family Sharing is Premium Only</h3>
+            <p>Share your pregnancy journey with your partner and family members!</p>
+            <p>Premium members can:</p>
+            <ul>
+              <li>✅ Invite unlimited family members</li>
+              <li>✅ Share all lists and budgets</li>
+              <li>✅ Collaborate on baby names</li>
+              <li>✅ Sync shopping lists in real-time</li>
+            </ul>
+            <button 
+              onClick={() => setShowPaywall(true)}
+              className="unlock-button"
+            >
+              <Lock size={16} />
+              Unlock Family Sharing
             </button>
           </div>
+        ) : (
+          <>
+            <div className="family-code-section">
+              <h3>Your Family Code</h3>
+              <p>Share this code with your partner or family members so they can join your pregnancy journey and share all your planning data!</p>
+              <div className="code-display">
+                <span className="family-code">{familyCode || 'Loading...'}</span>
+                <button onClick={copyFamilyCode} className="copy-button">
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
           <div className="sharing-info">
             <p><strong>What gets shared:</strong></p>
             <ul>
@@ -398,6 +723,8 @@ function Profile() {
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
       
       {/* Legal & Support Section */}
@@ -544,6 +871,14 @@ function Profile() {
           </div>
         </div>
       )}
+      
+      {/* Paywall Modal */}
+      <PaywallModal
+        show={showPaywall}
+        trigger="family"
+        onClose={() => setShowPaywall(false)}
+        customMessage="Share your pregnancy journey with your partner and family members. Upgrade to unlock unlimited family sharing!"
+      />
     </div>
   );
 }

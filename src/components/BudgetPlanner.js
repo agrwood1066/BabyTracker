@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Edit2, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, Download, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { CSVLink } from 'react-csv';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import './BudgetPlanner.css';
 
 function BudgetPlanner() {
+  // Subscription integration
+  const { checkFeatureAccess, isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState('limit');
+  
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +90,14 @@ function BudgetPlanner() {
 
   async function addCategory() {
     if (!newCategory.name) return;
+
+    // Check feature access
+    const access = await checkFeatureAccess('budget_categories', categories.length);
+    if (!access.canAdd && !isPremium()) {
+      setPaywallTrigger('limit');
+      setShowPaywall(true);
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -409,13 +424,59 @@ function BudgetPlanner() {
         </div>
       )}
 
-      <button 
-        className="fab-add" 
-        onClick={() => setShowAddCategory(true)}
-        title="Add Budget Category"
-      >
-        <Plus size={24} />
-      </button>
+      {/* Vault Display for Categories Beyond Limit */}
+      {!isPremium() && categories.length > 3 && (
+        <div className="vault-banner">
+          <div className="vault-content">
+            <Lock size={20} />
+            <span>{categories.length - 3} categories in vault</span>
+            <button 
+              onClick={() => {
+                setPaywallTrigger('limit');
+                setShowPaywall(true);
+              }}
+              className="unlock-button"
+            >
+              Unlock All Categories
+            </button>
+          </div>
+          {categories.slice(3).map(category => (
+            <div className="category-locked" key={category.id}>
+              <Lock size={16} /> {category.name} (Premium)
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Conditional Add Button */}
+      {!isPremium() && categories.length >= 3 ? (
+        <button 
+          className="fab-add limited" 
+          onClick={() => {
+            setPaywallTrigger('limit');
+            setShowPaywall(true);
+          }}
+          title="Upgrade for More Categories"
+        >
+          <Lock size={24} />
+        </button>
+      ) : (
+        <button 
+          className="fab-add" 
+          onClick={() => setShowAddCategory(true)}
+          title="Add Budget Category"
+        >
+          <Plus size={24} />
+        </button>
+      )}
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        show={showPaywall}
+        trigger={paywallTrigger}
+        onClose={() => setShowPaywall(false)}
+        customMessage="You've reached the free limit of 3 budget categories. Upgrade to add unlimited categories!"
+      />
     </div>
   );
 }

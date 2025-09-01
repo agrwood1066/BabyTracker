@@ -27,10 +27,12 @@ import './Landing.css';
 function Landing() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -168,6 +170,39 @@ function Landing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setMessage('Password reset email sent! Check your inbox and spam folder.');
+      // Keep the modal open to show success message
+    } catch (error) {
+      setMessage(error.message || 'Failed to send reset email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetModal = () => {
+    setShowLogin(false);
+    setShowSignUp(false);
+    setShowForgotPassword(false);
+    setEmail('');
+    setPassword('');
+    setResetEmail('');
+    setMessage('');
   };
 
   const scrollToFeature = (featureId) => {
@@ -542,7 +577,7 @@ function Landing() {
 
       {/* Login Modal */}
       {showLogin && (
-        <div className="modal-overlay" onClick={() => setShowLogin(false)}>
+        <div className="modal-overlay" onClick={resetModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Welcome Back</h2>
             <form onSubmit={(e) => handleAuth(e, false)}>
@@ -565,18 +600,32 @@ function Landing() {
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
-            <p>
-              Don't have an account?{' '}
-              <button 
-                className="link-btn"
-                onClick={() => {
-                  setShowLogin(false);
-                  setShowSignUp(true);
-                }}
-              >
-                Sign Up
-              </button>
-            </p>
+            <div className="auth-links">
+              <p>
+                <button 
+                  type="button"
+                  className="link-btn"
+                  onClick={() => {
+                    setShowLogin(false);
+                    setShowForgotPassword(true);
+                  }}
+                >
+                  Forgot Password?
+                </button>
+              </p>
+              <p>
+                Don't have an account?{' '}
+                <button 
+                  className="link-btn"
+                  onClick={() => {
+                    setShowLogin(false);
+                    setShowSignUp(true);
+                  }}
+                >
+                  Sign Up
+                </button>
+              </p>
+            </div>
             {message && <div className="message">{message}</div>}
           </div>
         </div>
@@ -584,7 +633,7 @@ function Landing() {
 
       {/* Sign Up Modal */}
       {showSignUp && (
-        <div className="modal-overlay" onClick={() => setShowSignUp(false)}>
+        <div className="modal-overlay" onClick={resetModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Create Your Account</h2>
             <p className="signup-terms">
@@ -624,6 +673,57 @@ function Landing() {
                 Sign In
               </button>
             </p>
+            {message && <div className="message">{message}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="modal-overlay" onClick={resetModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Reset Your Password</h2>
+            <p className="modal-description">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+            <form onSubmit={handleForgotPassword}>
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
+            <div className="auth-links">
+              <p>
+                Remember your password?{' '}
+                <button 
+                  className="link-btn"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setShowLogin(true);
+                  }}
+                >
+                  Back to Sign In
+                </button>
+              </p>
+              <p>
+                Don't have an account?{' '}
+                <button 
+                  className="link-btn"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setShowSignUp(true);
+                  }}
+                >
+                  Sign Up
+                </button>
+              </p>
+            </div>
             {message && <div className="message">{message}</div>}
           </div>
         </div>

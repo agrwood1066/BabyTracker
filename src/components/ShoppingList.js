@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ShoppingCart, Plus, Check, Trash2, Star, Edit2, Search, Tag, Gift } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Trash2, Star, Edit2, Search, Tag, Gift, Lock, Sparkles } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
+import EssentialsWelcomePopup, { AddEssentialsButton } from './EssentialsWelcomePopup';
 import './ShoppingList.css';
 
 // Currency configuration
@@ -39,6 +42,11 @@ const getCurrencySymbol = (code) => {
 };
 
 function ShoppingList() {
+  // Subscription integration
+  const { checkFeatureAccess, isPremium, vaultData } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState('limit');
+  
   const [items, setItems] = useState([]);
   const [budgetCategories, setBudgetCategories] = useState([]);
   const [newItem, setNewItem] = useState({
@@ -61,6 +69,11 @@ function ShoppingList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [shoppingGroupBy, setShoppingGroupBy] = useState('category');
   const [wishlistItems, setWishlistItems] = useState(new Map());
+  
+  // Essentials popup states
+  const [showEssentialsPopup, setShowEssentialsPopup] = useState(false);
+  const [hasImportedEssentials, setHasImportedEssentials] = useState(false);
+  const [familyId, setFamilyId] = useState(null);
 
   // Needed By options
   const neededByOptions = [
@@ -72,6 +85,7 @@ function ShoppingList() {
     fetchBudgetCategories();
     fetchItems();
     fetchWishlistStatus();
+    checkEssentialsStatus();
   }, []);
 
   async function fetchBudgetCategories() {
@@ -82,6 +96,8 @@ function ShoppingList() {
         .select('family_id')
         .eq('id', user.id)
         .single();
+
+      setFamilyId(profile.family_id);
 
       const { data, error } = await supabase
         .from('budget_categories')
@@ -222,6 +238,119 @@ function ShoppingList() {
     }
   }
 
+  async function checkEssentialsStatus() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+
+      // Check if user has any items
+      const { data: items } = await supabase
+        .from('baby_items')
+        .select('id')
+        .eq('family_id', profile.family_id)
+        .limit(1);
+
+      // Get essentials list ID
+      const { data: essentialsList } = await supabase
+        .from('preset_lists')
+        .select('id')
+        .eq('slug', 'essentials')
+        .single();
+
+      if (essentialsList) {
+        // Check if they've imported essentials
+        const { data: usage } = await supabase
+          .from('preset_list_usage')
+          .select('id')
+          .eq('family_id', profile.family_id)
+          .eq('preset_list_id', essentialsList.id)
+          .limit(1);
+
+        const hasNoItems = !items || items.length === 0;
+        const hasNotImported = !usage || usage.length === 0;
+
+        setHasImportedEssentials(!hasNotImported);
+
+        // Auto-show popup for brand new users
+        if (hasNoItems && hasNotImported) {
+          const dismissed = localStorage.getItem(`essentials_dismissed_${profile.family_id}`);
+          if (!dismissed) {
+            setTimeout(() => setShowEssentialsPopup(true), 1000);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking essentials:', error);
+    }
+  }
+
+  async function handleImportEssentials() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Check current item count for context
+      const currentItemCount = items.length;
+      const isNewUser = currentItemCount <= 2;
+      
+      const { data, error } = await supabase.rpc('import_preset_list', {
+        p_family_id: familyId,
+        p_user_id: user.id,
+        p_preset_slug: 'essentials',
+        p_skip_existing: true
+      });
+
+      if (error) {
+        console.error('Import error:', error);
+        
+        // Check if it's a limit error
+        if (error.message?.includes('limited to 10 items')) {
+          setPaywallTrigger('essentials');
+          setShowPaywall(true);
+          alert('Free accounts are limited to 10 items. Upgrade to add all 48 essentials!');
+        } else {
+          alert('Failed to import items. Please try again.');
+        }
+        return;
+      }
+
+      if (data?.success) {
+        await fetchItems();
+        setHasImportedEssentials(true);
+        setShowEssentialsPopup(false);
+        
+        // Customize message based on whether this was the special exception
+        if (data.is_exception) {
+          alert(`🎉 Welcome gift! We've added ${data.imported} essential items to get you started. This is a one-time bonus for new users!`);
+        } else if (data.skipped > 0) {
+          alert(`✅ Added ${data.imported} new items (${data.skipped} items were already in your list)`);
+        } else {
+          alert(`✅ Added ${data.imported} essential items to your shopping list!`);
+        }
+      } else if (data) {
+        // Handle cases where success is false but we got a response
+        if (data.message?.includes('limited')) {
+          setPaywallTrigger('essentials');
+          setShowPaywall(true);
+        }
+        alert(data.message || 'Could not import items.');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      alert('Failed to import items. Please check your connection and try again.');
+    }
+  }
+
+  function handleDismissEssentials() {
+    setShowEssentialsPopup(false);
+    if (familyId) {
+      localStorage.setItem(`essentials_dismissed_${familyId}`, 'true');
+    }
+  }
+
   async function fetchItems() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -260,6 +389,15 @@ function ShoppingList() {
 
   async function addItem() {
     if (!newItem.item_name) return;
+
+    // Check if user can add more items
+    const access = await checkFeatureAccess('shopping_items', items.length);
+    
+    if (!access.canAdd && !isPremium()) {
+      setPaywallTrigger('limit');
+      setShowPaywall(true);
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -475,7 +613,20 @@ function ShoppingList() {
           <ShoppingCart size={28} />
           Shopping List
         </h1>
+        {/* Add Essential Items button (inline with title) */}
+        <AddEssentialsButton 
+          onClick={() => setShowEssentialsPopup(true)}
+          hasImported={hasImportedEssentials}
+        />
       </div>
+      
+      {/* Welcome popup for new users */}
+      <EssentialsWelcomePopup
+        isOpen={showEssentialsPopup}
+        onClose={handleDismissEssentials}
+        onAddEssentials={handleImportEssentials}
+        isNewUser={items.length <= 2}
+      />
 
       <div className="search-section">
         <div className="search-bar">
@@ -512,13 +663,61 @@ function ShoppingList() {
         onEdit={editItem}
       />
 
-      <button 
-        className="fab-add" 
-        onClick={() => setShowAddItem(true)}
-        title="Add Item"
-      >
-        <Plus size={24} />
-      </button>
+      {/* Vault Banner for items beyond limit */}
+      {!isPremium() && items.length > 10 && (
+        <div className="vault-banner">
+          <div className="vault-content">
+            <Lock size={20} />
+            <span>{items.length - 10} items saved in your vault</span>
+            <button 
+              onClick={() => {
+                setPaywallTrigger('limit');
+                setShowPaywall(true);
+              }}
+              className="unlock-button"
+            >
+              Unlock All Items
+            </button>
+          </div>
+          
+          {/* Preview of vault items (read-only) */}
+          <div className="vault-preview">
+            {items.slice(10, 13).map((item) => (
+              <div key={item.id} className="vault-item-preview">
+                <span className="item-name">{item.item_name}</span>
+                <Lock size={12} />
+              </div>
+            ))}
+            {items.length > 13 && (
+              <span className="more-items">
+                +{items.length - 13} more...
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conditional Add Button */}
+      {!isPremium() && items.length >= 10 ? (
+        <button 
+          className="fab-add limited" 
+          onClick={() => {
+            setPaywallTrigger('limit');
+            setShowPaywall(true);
+          }}
+          title="Upgrade to Add More"
+        >
+          <Lock size={24} />
+        </button>
+      ) : (
+        <button 
+          className="fab-add" 
+          onClick={() => setShowAddItem(true)}
+          title="Add Item"
+        >
+          <Plus size={24} />
+        </button>
+      )}
 
       {showAddItem && (
         <AddItemModal
@@ -554,8 +753,11 @@ function ShoppingList() {
 
               if (error) throw error;
               
+              // Ensure category is created before updating state
               await fetchBudgetCategories();
-              setNewItem({ ...newItem, budget_category_id: data.id });
+              
+              // Use functional update to ensure we have the latest state
+              setNewItem(prevItem => ({ ...prevItem, budget_category_id: data.id }));
               return true;
             } catch (error) {
               console.error('Error adding category:', error);
@@ -608,8 +810,11 @@ function ShoppingList() {
 
               if (error) throw error;
               
+              // Ensure category is created before updating state
               await fetchBudgetCategories();
-              setNewItem({ ...newItem, budget_category_id: data.id });
+              
+              // Use functional update to ensure we have the latest state
+              setNewItem(prevItem => ({ ...prevItem, budget_category_id: data.id }));
               return true;
             } catch (error) {
               console.error('Error adding category:', error);
@@ -619,6 +824,14 @@ function ShoppingList() {
           }}
         />
       )}
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        show={showPaywall}
+        trigger={paywallTrigger}
+        onClose={() => setShowPaywall(false)}
+        customMessage={`You've reached the free limit of 10 shopping items. Upgrade to add unlimited items!`}
+      />
     </div>
   );
 }

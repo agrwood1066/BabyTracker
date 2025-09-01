@@ -1,0 +1,143 @@
+/* Promo Code Input Styles */
+.promo-code-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  margin: 1rem 0;
+}
+
+.promo-code-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #667eea;
+}
+
+.promo-code-header h3 {
+  margin: 0;
+  color: #374151;
+  font-size: 1.2rem;
+}
+
+.promo-code-form {
+  margin-bottom: 1rem;
+}
+
+.promo-input-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.promo-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.promo-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.promo-input.success {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.promo-input.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.promo-input:disabled {
+  background: #f9fafb;
+  cursor: not-allowed;
+}
+
+.promo-button {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.promo-button:hover:not(:disabled) {
+  background: #5a67d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.promo-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.promo-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.promo-status.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.promo-status.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.promo-benefits {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.promo-benefits p {
+  margin: 0.5rem 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .promo-input-group {
+    flex-direction: column;
+  }
+
+  .promo-button {
+    width: 100%;
+  }
+}

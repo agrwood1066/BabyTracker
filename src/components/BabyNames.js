@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Heart, Plus, User, Users, Star, Trash2, Edit2 } from 'lucide-react';
+import { Heart, Plus, User, Users, Star, Trash2, Edit2, Lock } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import PaywallModal from './PaywallModal';
 import './BabyNames.css';
 
 function BabyNames() {
+  // Subscription integration
+  const { checkFeatureAccess, isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
+  
   const [names, setNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddName, setShowAddName] = useState(false);
@@ -81,6 +87,13 @@ function BabyNames() {
 
   async function addName() {
     if (!newName.name) return;
+
+    // Check feature access
+    const access = await checkFeatureAccess('baby_names', names.length);
+    if (!access.canAdd && !isPremium()) {
+      setShowPaywall(true);
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -432,13 +445,73 @@ function BabyNames() {
         </div>
       )}
 
-      <button 
-        className="fab-add" 
-        onClick={() => setShowAddName(true)}
-        title="Add Name"
-      >
-        <Plus size={24} />
-      </button>
+      {/* Limit Warning for Free Users */}
+      {!isPremium() && names.length >= 5 && (
+        <div className="limit-warning">
+          <p>Free accounts limited to 5 names</p>
+          <button onClick={() => setShowPaywall(true)}>
+            Unlock Unlimited Names
+          </button>
+        </div>
+      )}
+
+      {/* Vault Display for Names Beyond Limit */}
+      {!isPremium() && names.length > 5 && (
+        <div className="vault-banner">
+          <div className="vault-content">
+            <Lock size={20} />
+            <span>{names.length - 5} names saved in your vault</span>
+            <button 
+              onClick={() => setShowPaywall(true)}
+              className="unlock-button"
+            >
+              Unlock All Names
+            </button>
+          </div>
+          
+          {/* Preview of vault names (read-only) */}
+          <div className="vault-preview">
+            {names.slice(5, 8).map((name) => (
+              <div key={name.id} className="vault-item-preview">
+                <span className="item-name">{name.name}</span>
+                <Lock size={12} />
+              </div>
+            ))}
+            {names.length > 8 && (
+              <span className="more-items">
+                +{names.length - 8} more...
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conditional Add Button */}
+      {!isPremium() && names.length >= 5 ? (
+        <button 
+          className="fab-add limited" 
+          onClick={() => setShowPaywall(true)}
+          title="Upgrade to Add More Names"
+        >
+          <Lock size={24} />
+        </button>
+      ) : (
+        <button 
+          className="fab-add" 
+          onClick={() => setShowAddName(true)}
+          title="Add Name"
+        >
+          <Plus size={24} />
+        </button>
+      )}
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        show={showPaywall}
+        trigger="limit"
+        onClose={() => setShowPaywall(false)}
+        customMessage="You've reached the free limit of 5 baby names. Upgrade to add unlimited names!"
+      />
     </div>
   );
 }
