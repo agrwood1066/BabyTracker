@@ -11,13 +11,26 @@ function Login() {
   const [promoCode, setPromoCode] = useState('');
   const [promoMessage, setPromoMessage] = useState('');
 
-  // Check URL params for promo code
+  // Check URL params for promo code and email pre-filling
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
+    const emailParam = urlParams.get('email');
+    const signupParam = urlParams.get('signup');
+    
     if (code) {
       setPromoCode(code.toUpperCase());
       setIsSignUp(true); // Default to signup if promo code present
+    }
+    
+    // Pre-fill email from influencer signup
+    if (emailParam) {
+      setEmail(decodeURIComponent(emailParam));
+    }
+    
+    // Force signup mode if coming from influencer flow
+    if (signupParam === 'true') {
+      setIsSignUp(true);
     }
   }, []);
 

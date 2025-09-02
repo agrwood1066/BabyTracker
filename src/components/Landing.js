@@ -262,72 +262,84 @@ function Landing() {
           <X size={24} />
         </button>
         <div className="mobile-menu-content">
-          <button 
-            className="mobile-menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowLogin(true);
-              setMobileMenuOpen(false);
-            }}
-          >
-            Log In
-          </button>
-          <Link 
-            to="/blog" 
-            className="mobile-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMobileMenuOpen(false);
-            }}
-          >
-            Blog
-          </Link>
-          <a 
-            href="https://www.instagram.com/babystepsplanner/" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="mobile-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMobileMenuOpen(false);
-            }}
-          >
-            Instagram
-          </a>
-          <div className="mobile-menu-section">
-            <div className="mobile-menu-section-title">Legal</div>
+          <div className="mobile-menu-main">
+            <button 
+              className="mobile-menu-item"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowLogin(true);
+                setMobileMenuOpen(false);
+              }}
+            >
+              Log In
+            </button>
             <Link 
-              to="/privacy-policy" 
-              className="mobile-menu-item mobile-menu-subitem"
+              to="/blog" 
+              className="mobile-menu-item"
               onClick={(e) => {
                 e.stopPropagation();
                 setMobileMenuOpen(false);
               }}
             >
-              Privacy Policy
+              Blog
             </Link>
-            <Link 
-              to="/terms-of-service" 
-              className="mobile-menu-item mobile-menu-subitem"
+            <a 
+              href="https://www.instagram.com/babystepsplanner/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="mobile-menu-item"
               onClick={(e) => {
                 e.stopPropagation();
                 setMobileMenuOpen(false);
               }}
             >
-              Terms of Service
-            </Link>
+              Instagram
+            </a>
+            <div className="mobile-menu-section">
+              <div className="mobile-menu-section-title">Legal</div>
+              <Link 
+                to="/privacy-policy" 
+                className="mobile-menu-item mobile-menu-subitem"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Privacy Policy
+              </Link>
+              <Link 
+                to="/terms-of-service" 
+                className="mobile-menu-item mobile-menu-subitem"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Terms of Service
+              </Link>
+            </div>
+            <a 
+              href="mailto:hello@babystepsplanner.com" 
+              className="mobile-menu-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileMenuOpen(false);
+              }}
+            >
+              Support
+            </a>
           </div>
-          <a 
-            href="mailto:hello@babystepsplanner.com" 
-            className="mobile-menu-item"
+          <Link 
+            to="/influencer-signup" 
+            className="mobile-menu-item mobile-menu-partner"
             onClick={(e) => {
               e.stopPropagation();
               setMobileMenuOpen(false);
             }}
           >
-            Support
-          </a>
+            Become a Partner
+          </Link>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { Baby, Gift, Star, Check, ChevronRight } from 'lucide-react';
 import './PromoLanding.css';
 
 const PromoLanding = () => {
-  const { code } = useParams(); // URL: /with/{ANY_PROMO_CODE}
+  const { code } = useParams(); // URL: /with/{ANY_PROMO_CODE} - Works with any code!
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [promoDetails, setPromoDetails] = useState(null);
