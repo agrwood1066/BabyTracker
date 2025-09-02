@@ -1,0 +1,275 @@
+/* PromoLanding.css */
+
+.promo-landing {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ffeef0 0%, #fff5e6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.promo-container {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Influencer Badge */
+.influencer-badge {
+  background: linear-gradient(135deg, #ff9faa, #ffb3ba);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Main Content */
+.promo-content {
+  padding: 40px 30px;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-icon {
+  color: #ff9faa;
+  margin-bottom: 10px;
+}
+
+.logo-section h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+/* Offer Highlight */
+.offer-highlight {
+  background: linear-gradient(135deg, #ffeef0, #fff5e6);
+  border: 2px solid #ff9faa;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.star-icon {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 4px;
+  color: #ffd700;
+  border-radius: 50%;
+  border: 2px solid #ff9faa;
+}
+
+.offer-highlight h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ff6b9d;
+  margin: 10px 0;
+}
+
+.offer-subtitle {
+  color: #718096;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Benefits List */
+.benefits-list {
+  margin-bottom: 30px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.benefit-item:last-child {
+  border-bottom: none;
+}
+
+.check-icon {
+  color: #48bb78;
+  flex-shrink: 0;
+}
+
+.benefit-item span {
+  color: #4a5568;
+  font-size: 15px;
+}
+
+/* Form */
+.promo-form {
+  margin-top: 30px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.email-input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.email-input:focus {
+  border-color: #ff9faa;
+  box-shadow: 0 0 0 3px rgba(255, 159, 170, 0.1);
+}
+
+.email-input:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #ff9faa, #ffb3ba);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(255, 159, 170, 0.3);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-text {
+  color: #e53e3e;
+  font-size: 14px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff5f5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.terms-text {
+  text-align: center;
+  color: #718096;
+  font-size: 13px;
+  margin-top: 15px;
+}
+
+/* Trust Signals */
+.trust-signals {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.trust-signals p {
+  color: #718096;
+  font-size: 14px;
+  margin: 0 0 8px 0;
+}
+
+.rating {
+  font-size: 16px;
+  color: #4a5568;
+}
+
+/* Error State */
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-message {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.error-message p {
+  margin: 10px 0;
+  color: #4a5568;
+}
+
+.error-message p:first-child {
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .promo-container {
+    border-radius: 0;
+    min-height: 100vh;
+  }
+  
+  .promo-content {
+    padding: 30px 20px;
+  }
+  
+  .offer-highlight h2 {
+    font-size: 20px;
+  }
+  
+  .form-group {
+    gap: 12px;
+  }
+  
+  .email-input,
+  .submit-button {
+    font-size: 15px;
+    padding: 14px;
+  }
+}

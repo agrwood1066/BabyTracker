@@ -22,6 +22,7 @@ import SubscriptionSuccess from './components/SubscriptionSuccess';
 import SubscriptionActivation from './components/SubscriptionActivation';
 import InfluencerDashboard from './components/InfluencerDashboard';
 import ResetPassword from './components/ResetPassword';
+import PromoLanding from './components/PromoLanding';
 
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
@@ -76,6 +77,7 @@ function App() {
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/subscription/activate" element={<SubscriptionActivation />} />
             <Route path="/influencer/:code" element={<InfluencerDashboard />} />
+            <Route path="/with/:code" element={<PromoLanding />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (
