@@ -607,6 +607,11 @@
   color: #6b7280;
 }
 
+.status-badge.purple {
+  background: linear-gradient(135deg, #a855f7, #8b5cf6);
+  color: white;
+}
+
 .trial-info,
 .lifetime-info,
 .active-subscription,

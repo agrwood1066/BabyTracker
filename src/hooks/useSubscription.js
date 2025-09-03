@@ -58,7 +58,7 @@ export const SubscriptionProvider = ({ children }) => {
     }
     
     // Fall back to local subscription status
-    return ['trial', 'active', 'lifetime_admin'].includes(subscription?.subscription_status);
+    return ['trial', 'active', 'lifetime_admin', 'influencer_premium'].includes(subscription?.subscription_status);
   };
 
   // New function to check if can start trial
@@ -291,6 +291,15 @@ export const SubscriptionProvider = ({ children }) => {
           hasStripeData,
           syncStatus,
           details: 'Admin granted lifetime access'
+        };
+      case 'influencer_premium':
+        return { 
+          status: 'Influencer Premium', 
+          badge: '✨',
+          color: 'purple',
+          hasStripeData,
+          syncStatus,
+          details: 'Complimentary influencer access'
         };
       case 'active':
         const planType = subscription.subscription_plan === 'premium_annual' ? 'Annual' : 'Monthly';
