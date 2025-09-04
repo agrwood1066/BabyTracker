@@ -99,6 +99,7 @@ function App() {
                 <Route path="/subscription-test" element={<SubscriptionTest />} />
                 <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                 <Route path="/subscription/activate" element={<SubscriptionActivation />} />
+                <Route path="/influencer/:code" element={<InfluencerDashboard />} />
                 {/* Blog pages available to logged-in users too */}
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />

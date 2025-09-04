@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useInfluencer } from '../hooks/useInfluencer';
 import {
   Baby,
   Home,
@@ -14,7 +15,8 @@ import {
   LogOut,
   Menu,
   X,
-  Calendar
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import './Navigation.css';
 
@@ -23,6 +25,7 @@ const Navigation = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCompactMode, setIsCompactMode] = useState(false);
+  const { isInfluencer, getInfluencerDashboardUrl } = useInfluencer();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard', priority: 1 },
@@ -117,6 +120,18 @@ const Navigation = () => {
                   </Link>
                 );
               })}
+              
+              {/* Influencer Dashboard Link - only show for influencers */}
+              {isInfluencer && getInfluencerDashboardUrl() && (
+                <Link
+                  to={getInfluencerDashboardUrl()}
+                  className={`slide-menu-item ${location.pathname.includes('/influencer/') ? 'slide-menu-item-active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <BarChart3 size={20} />
+                  <span>Metrics</span>
+                </Link>
+              )}
               
               <button
                 className="slide-menu-item slide-menu-item-signout"

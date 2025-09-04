@@ -1,8 +1,10 @@
 # Baby Steps - Baby Tracker Web App
 
-A modern, clean pregnancy tracking web application built with React and Supabase. Features include budget planning, baby items tracking, gift wishlists, hospital bag management, parenting discussion tools, and comprehensive editing capabilities.
+A modern, clean pregnancy tracking web application built with React and Supabase. Features include budget planning, baby items tracking, gift wishlists, hospital bag management, parenting discussion tools, comprehensive editing capabilities, and **enterprise-grade influencer partnership system**.
 
 🔒 **Production-Ready with Enterprise-Grade Security** - Fully secured with Row Level Security policies and development/production logging separation.
+
+💰 **Industry-Leading Influencer Program** - Automated detection with manual approval system and competitive commission rates.
 
 ## 🌟 Features
 
@@ -13,6 +15,7 @@ A modern, clean pregnancy tracking web application built with React and Supabase
 - 🏥 **Hospital Bag Tracker** - Comprehensive checklist for mum, baby, and partner with editing capabilities
 - 💕 **Baby Names** - Suggest, edit, and vote on baby names with your partner
 - 💬 **Parenting Vows** - Important conversations before baby arrives with upvoting and consensus tracking
+- 🌟 **Influencer Partnership System** - Automated influencer application detection with manual approval workflow
 - 👫 **Family Accounts** - Share all lists with partners and family members
 - ✏️ **Full Editing** - Edit any item across all features (Shopping List, Baby Names, Hospital Bag, Parenting Vows)
 - 🎨 **Visual Wishlist** - Automatic product image extraction from URLs
@@ -87,12 +90,12 @@ npm install
 - **CRITICAL**: Set up Row Level Security policies (see Security Setup below)
 - See `SUPABASE_SETUP.md` for detailed instructions
 
-### 4. **Security Setup (REQUIRED for Production)**:
+### **Security Setup (REQUIRED for Production)**:
 
 **Run this SQL in your Supabase SQL Editor to enable Row Level Security:**
 
 ```sql
--- Enable RLS on all tables
+-- Enable RLS on all tables (including new influencer tables)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budget_categories ENABLE ROW LEVEL SECURITY;
@@ -107,6 +110,8 @@ ALTER TABLE pregnancy_vows_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pregnancy_vows_responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pregnancy_vows_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pregnancy_vows_question_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_queue ENABLE ROW LEVEL SECURITY;
 
 -- Create family-based access policies
 CREATE POLICY "Users can access family data" ON baby_items
@@ -118,7 +123,7 @@ FOR ALL USING (family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid(
 
 > ⚠️ **WARNING**: Without these policies, all user data will be accessible to all authenticated users. This is a critical security vulnerability.
 
-### 5. Configure environment variables:
+### 4. Configure environment variables:
 Create a `.env` file in the root directory:
 ```
 REACT_APP_SUPABASE_URL=your_supabase_url
@@ -127,6 +132,37 @@ REACT_APP_LINKPREVIEW_API_KEY=your_linkpreview_api_key
 ```
 
 **Note**: For wishlist image extraction, get a free API key from [LinkPreview.net](https://linkpreview.net) (1000 requests/month free). **Security**: Ensure you restrict the API key to your domain in the LinkPreview dashboard.
+
+### 5. **Influencer System Setup (Optional)**:
+
+If you want to enable the influencer partnership system, run these additional SQL commands:
+
+```sql
+-- Add influencer premium to subscription status constraint
+ALTER TABLE profiles 
+DROP CONSTRAINT IF EXISTS profiles_subscription_status_check;
+
+ALTER TABLE profiles 
+ADD CONSTRAINT profiles_subscription_status_check 
+CHECK (subscription_status IN ('trial', 'free', 'active', 'expired', 'lifetime_admin', 'influencer_premium'));
+
+-- Create notification queue table
+CREATE TABLE IF NOT EXISTS notification_queue (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    notification_type TEXT NOT NULL,
+    recipient_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    data jsonb,
+    sent BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    sent_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Create function for influencer upgrades (see PAYWALL_INFLUENCER_STRATEGY.md for full SQL)
+```
+
+**For complete influencer system setup**, see `PAYWALL_INFLUENCER_STRATEGY.md` for detailed instructions.
 
 ### 6. Run the development server:
 ```bash
@@ -147,12 +183,25 @@ The app uses Supabase with the following main tables:
 - `hospital_bag_items` - Hospital bag checklist with full editing capabilities
 - `baby_names` - Baby name suggestions with editing support
 - `baby_name_votes` - Voting on baby names
+- `promo_codes` - Influencer promo codes and tracking
+- `notification_queue` - Automated email notifications for influencer applications
 - `pregnancy_vows_categories` - Categories for parenting discussion topics
 - `pregnancy_vows_questions` - Important questions to discuss before baby arrives
 - `pregnancy_vows_responses` - Partner responses to questions
 - `pregnancy_vows_interactions` - Upvotes and consensus tracking
 
 ## ✨ Latest Features & Updates
+
+### **NEW: Influencer Partnership System (January 2025):**
+- **Automated Detection** - System automatically detects influencer applications with `is_influencer` flag
+- **Email Notifications** - Instant email alerts to hello@babystepsplanner.com for new applications
+- **Manual Approval Workflow** - Full control over influencer partnerships with quality review
+- **Streamlined Upgrade Process** - Saved Supabase queries for instant premium access grants
+- **"Influencer Premium ✨" Status** - Purple badge with full premium feature access
+- **Multi-Contact Support** - Instagram DM (@babystepsplanner) and email backup options
+- **Commission Tracking** - Revenue-based structure with £15-34 potential per converting user
+- **Stripe Integration** - Manual promo code creation with database linking
+- **Quality Control** - Review process ensures brand-appropriate partnerships
 
 ### **Shopping List UI Improvements (August 2025):**
 - **Clean Tile Design** - Modern card-based layout for shopping items
