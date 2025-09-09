@@ -334,7 +334,7 @@ const InfluencerDashboard = () => {
     );
   }
 
-  const shareUrl = `https://babysteps.app/signup?code=${code.toUpperCase()}`;
+  const shareUrl = `${process.env.REACT_APP_BASE_URL}/signup?code=${code.toUpperCase()}`;
   const copyShareLink = () => {
     navigator.clipboard.writeText(shareUrl);
     alert('Share link copied to clipboard!');
@@ -547,7 +547,7 @@ const InfluencerDashboard = () => {
 
       {/* Footer */}
       <div className="dashboard-footer">
-        <p>Questions? Email us at <a href="mailto:partners@babysteps.app">partners@babysteps.app</a></p>
+        <p>Questions? Email us at <a href="mailto:partners@babystepsplanner.com">partners@babystepsplanner.com</a></p>
         <p className="refresh-note">Dashboard updates every hour</p>
       </div>
     </div>
