@@ -142,6 +142,13 @@ function Landing() {
     setLoading(true);
     setMessage('');
 
+    // Add password validation
+    if (password.length < 6) {
+      setMessage('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isSignUpForm) {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -602,11 +609,20 @@ function Landing() {
               />
               <input
                 type="password"
-                placeholder="Password"
+                placeholder="Password (minimum 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                title="Password must be at least 6 characters long"
+                onInvalid={(e) => {
+                  if (e.target.validity.tooShort) {
+                    e.target.setCustomValidity('Password must be at least 6 characters long');
+                  } else {
+                    e.target.setCustomValidity('');
+                  }
+                }}
+                onInput={(e) => e.target.setCustomValidity('')}
               />
               <button type="submit" disabled={loading}>
                 {loading ? 'Signing In...' : 'Sign In'}
@@ -663,11 +679,20 @@ function Landing() {
               />
               <input
                 type="password"
-                placeholder="Password (min 6 characters)"
+                placeholder="Password (minimum 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                title="Password must be at least 6 characters long"
+                onInvalid={(e) => {
+                  if (e.target.validity.tooShort) {
+                    e.target.setCustomValidity('Password must be at least 6 characters long');
+                  } else {
+                    e.target.setCustomValidity('');
+                  }
+                }}
+                onInput={(e) => e.target.setCustomValidity('')}
               />
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating Account...' : 'Get Started'}
