@@ -32,9 +32,23 @@ function Landing() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Debug: Log any global errors
+  React.useEffect(() => {
+    const handleError = (event) => {
+      console.error('Global error caught:', event.error);
+      if (event.error && event.error.message && event.error.message.includes('JSON')) {
+        setError('Connection error. Please refresh the page and try again.');
+      }
+    };
+    
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   const features = [
     {
@@ -141,10 +155,11 @@ function Landing() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    setError(''); // Clear any previous errors
 
     // Add password validation
     if (password.length < 6) {
-      setMessage('Password must be at least 6 characters long');
+      setError('Password must be at least 6 characters long');
       setLoading(false);
       return;
     }
@@ -156,10 +171,39 @@ function Landing() {
           password: password,
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error('Sign up error:', signUpError);
+          throw signUpError;
+        }
 
         if (signUpData.user) {
-          setMessage('Account created successfully! Please check your email for verification.');
+          setMessage('Account created successfully! Signing you in...');
+          
+          // Try to sign in automatically after signup
+          setTimeout(async () => {
+            try {
+              const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+              });
+              
+              if (!signInError && signInData.user) {
+                setMessage('Welcome! Redirecting...');
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 500);
+              } else {
+                setMessage('Account created! Please sign in.');
+                setShowSignUp(false);
+                setShowLogin(true);
+              }
+            } catch (err) {
+              console.error('Auto sign-in error:', err);
+              setMessage('Account created! Please sign in.');
+              setShowSignUp(false);
+              setShowLogin(true);
+            }
+          }, 1000);
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -167,13 +211,33 @@ function Landing() {
           password: password,
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Sign in error:', error);
+          throw error;
+        }
+        
         if (data.user) {
-          setMessage('Welcome back!');
+          setMessage('Welcome back! Redirecting...');
+          // Force page reload to update auth state
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 500);
+        } else {
+          setMessage('Sign in completed.');
         }
       }
     } catch (error) {
-      setMessage(error.message);
+      console.error('Auth error:', error);
+      // Better error messages
+      if (error.message === 'Invalid login credentials') {
+        setError('Invalid email or password. Please try again.');
+      } else if (error.message === 'Email not confirmed') {
+        setError('Please verify your email before signing in.');
+      } else if (error.message && error.message.includes('JSON')) {
+        setError('Connection error. Please try again.');
+      } else {
+        setError(error.message || 'An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -195,8 +259,8 @@ function Landing() {
 
       setMessage('Password reset email sent! Check your inbox and spam folder.');
       // Keep the modal open to show success message
-    } catch (error) {
-      setMessage(error.message || 'Failed to send reset email. Please try again.');
+    } catch (err) {
+      setError(err.message || 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -210,6 +274,7 @@ function Landing() {
     setPassword('');
     setResetEmail('');
     setMessage('');
+    setError(''); // Clear error on modal close
   };
 
   const scrollToFeature = (featureId) => {
@@ -654,7 +719,8 @@ function Landing() {
                 </button>
               </p>
             </div>
-            {message && <div className="message">{message}</div>}
+            {message && <div className="message success-message">{message}</div>}
+            {error && <div className="message error-message">{error}</div>}
           </div>
         </div>
       )}
@@ -710,7 +776,8 @@ function Landing() {
                 Sign In
               </button>
             </p>
-            {message && <div className="message">{message}</div>}
+            {message && <div className="message success-message">{message}</div>}
+            {error && <div className="message error-message">{error}</div>}
           </div>
         </div>
       )}
@@ -761,7 +828,8 @@ function Landing() {
                 </button>
               </p>
             </div>
-            {message && <div className="message">{message}</div>}
+            {message && <div className="message success-message">{message}</div>}
+            {error && <div className="message error-message">{error}</div>}
           </div>
         </div>
       )}

@@ -67,13 +67,26 @@ function Login() {
               p_code: promoCode
             });
             
-            if (data && data.success) {
-              setPromoMessage(`✅ ${data.message}`);
-            } else if (data && data.error) {
-              setPromoMessage(`⚠️ Promo code: ${data.error}`);
+            if (error) {
+              console.warn('Promo code application failed:', error);
+              setPromoMessage(`⚠️ Promo code could not be applied: ${error.message}`);
+            } else if (data) {
+              // Handle the response properly
+              if (typeof data === 'object' && data !== null) {
+                if (data.success) {
+                  setPromoMessage(`✅ ${data.message || 'Promo code applied successfully'}`);
+                } else {
+                  setPromoMessage(`⚠️ ${data.error || data.message || 'Promo code could not be applied'}`);
+                }
+              } else {
+                // If data is not an object, just log it
+                console.log('Promo code response:', data);
+                setPromoMessage('✅ Promo code processed');
+              }
             }
           } catch (promoError) {
             console.error('Promo code error:', promoError);
+            setPromoMessage('⚠️ Promo code could not be verified at this time');
           }
         }
 
@@ -91,14 +104,18 @@ function Login() {
               
               if (!signInError && signInData.user) {
                 setMessage('Welcome! Redirecting...');
+                // Use a more reliable reload method
                 setTimeout(() => {
-                  window.location.reload(); // Refresh to load the app
+                  window.location.href = '/';
                 }, 500);
               } else {
                 setMessage('Sign up successful! Please sign in.');
+                setIsSignUp(false); // Switch to sign in mode
               }
             } catch (err) {
+              console.error('Auto sign-in error:', err);
               setMessage('Sign up successful! Please sign in.');
+              setIsSignUp(false); // Switch to sign in mode
             }
           }, 1000);
         } else {
@@ -124,13 +141,24 @@ function Login() {
         }
         
         if (data.user) {
-          setMessage('Sign in successful!');
+          setMessage('Sign in successful! Redirecting...');
+          // Redirect to dashboard
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 500);
         } else {
           setMessage('Sign in completed.');
         }
       }
     } catch (error) {
-      setMessage(error.message);
+      // Better error handling
+      if (error.message === 'Invalid login credentials') {
+        setMessage('Invalid email or password. Please try again.');
+      } else if (error.message === 'Email not confirmed') {
+        setMessage('Please verify your email before signing in.');
+      } else {
+        setMessage(error.message || 'An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

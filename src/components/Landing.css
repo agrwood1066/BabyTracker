@@ -1535,3 +1535,25 @@
     margin: 0;
   }
 }
+
+/* Message styling for auth modals */
+.message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.message.success-message {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.message.error-message {
+  background-color: #FFE5E5;
+  color: #D32F2F;
+  border: 1px solid #FFCDD2;
+}

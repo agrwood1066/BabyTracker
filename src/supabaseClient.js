@@ -9,17 +9,55 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.log('REACT_APP_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Missing')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-})
+// Create Supabase client with error handling
+let supabase;
 
-// Add debug logging
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event, session)
-})
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'baby-steps-auth',
+      storage: window.localStorage,
+    },
+    global: {
+      headers: {
+        'x-application-name': 'baby-steps-planner'
+      }
+    }
+  });
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  // Create a fallback client that will at least not crash the app
+  supabase = {
+    auth: {
+      signUp: async () => ({ error: new Error('Supabase client initialization failed') }),
+      signInWithPassword: async () => ({ error: new Error('Supabase client initialization failed') }),
+      signOut: async () => ({ error: new Error('Supabase client initialization failed') }),
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      resetPasswordForEmail: async () => ({ error: new Error('Supabase client initialization failed') }),
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ error: new Error('Supabase client initialization failed') })
+        })
+      })
+    }),
+    rpc: async () => ({ error: new Error('Supabase client initialization failed') })
+  };
+}
+
+export { supabase };
+
+// Add debug logging only if supabase client is properly initialized
+if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session);
+  });
+}
 
 // Expose to window for debugging (development only)
 if (process.env.NODE_ENV === 'development') {
