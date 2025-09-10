@@ -334,7 +334,9 @@ const InfluencerDashboard = () => {
     );
   }
 
-  const shareUrl = `${process.env.REACT_APP_BASE_URL}/signup?code=${code.toUpperCase()}`;
+  // Use production URL with fallback to localhost for development
+  const baseUrl = process.env.REACT_APP_BASE_URL || 'https://www.babystepsplanner.com';
+  const shareUrl = `${baseUrl}/signup?code=${code.toUpperCase()}`;
   const copyShareLink = () => {
     navigator.clipboard.writeText(shareUrl);
     alert('Share link copied to clipboard!');
