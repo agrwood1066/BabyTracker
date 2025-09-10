@@ -24,6 +24,7 @@ import InfluencerDashboard from './components/InfluencerDashboard';
 import ResetPassword from './components/ResetPassword';
 import PromoLanding from './components/PromoLanding';
 import InfluencerSignup from './components/InfluencerSignup';
+import DebugAuth from './components/DebugAuth';
 
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
@@ -77,6 +78,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/subscription/activate" element={<SubscriptionActivation />} />
+            <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="/influencer/:code" element={<InfluencerDashboard />} />
             {/* <Route path="/with/:code" element={<PromoLanding />} /> */}
             <Route path="/influencer-signup" element={<InfluencerSignup />} />

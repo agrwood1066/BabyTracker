@@ -9,6 +9,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.log('REACT_APP_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Missing')
 }
 
+// Clear any potentially corrupted auth data
+try {
+  const authKey = 'baby-steps-auth';
+  const storedData = window.localStorage.getItem(authKey);
+  if (storedData) {
+    try {
+      // Try to parse it to check if it's valid JSON
+      JSON.parse(storedData);
+    } catch (e) {
+      console.warn('Clearing corrupted auth data from localStorage');
+      window.localStorage.removeItem(authKey);
+      // Also clear the default Supabase auth key
+      window.localStorage.removeItem('supabase.auth.token');
+      window.localStorage.removeItem('sb-lzppcmkjdgunhldgcgka-auth-token');
+    }
+  }
+} catch (error) {
+  console.error('Error checking localStorage:', error);
+}
+
 // Create Supabase client with error handling
 let supabase;
 
