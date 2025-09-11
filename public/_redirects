@@ -1,1 +1,11 @@
-/* /index.html 200
+/signup*           /index.html    200
+/blog*             /index.html    200
+/with/*            /index.html    200
+/influencer/*      /index.html    200
+/privacy-policy    /index.html    200
+/terms-of-service  /index.html    200
+/reset-password    /index.html    200
+/subscription-success /index.html 200
+/subscription/*    /index.html    200
+/debug-auth        /index.html    200
+/influencer-signup /index.html    200
