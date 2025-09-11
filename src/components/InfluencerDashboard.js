@@ -588,7 +588,7 @@ const InfluencerDashboard = () => {
 
       {/* Footer */}
       <div className="dashboard-footer">
-        <p>Questions? Email us at <a href="mailto:partners@babystepsplanner.com">partners@babystepsplanner.com</a></p>
+        <p>Questions? Email us at <a href="mailto:hello@babystepsplanner.com">hello@babystepsplanner.com</a></p>
         <p className="refresh-note">Dashboard updates every hour</p>
       </div>
     </div>
