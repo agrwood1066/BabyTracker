@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { TrendingUp, Users, DollarSign, Award, Calendar, BarChart3, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Award, Calendar, BarChart3, LogIn, UserPlus, AlertCircle, Eye, Copy } from 'lucide-react';
 import './InfluencerDashboard.css';
 
 const InfluencerDashboard = () => {
@@ -176,7 +176,7 @@ const InfluencerDashboard = () => {
         }
       } else {
         setStats(statsData[0] || {
-          total_signups: 0,
+          total_visits: 0,
           active_trials: 0,
           paid_conversions: 0,
           conversion_rate: 0,
@@ -335,11 +335,18 @@ const InfluencerDashboard = () => {
   }
 
   // Use production URL with fallback to localhost for development
-  const baseUrl = process.env.REACT_APP_BASE_URL || 'https://www.babystepsplanner.com';
-  const shareUrl = `${baseUrl}/signup?code=${code.toUpperCase()}`;
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    alert('Share link copied to clipboard!');
+  const baseUrl = 'https://www.babystepsplanner.com';
+  const landingUrl = `${baseUrl}/signup?code=${code.toUpperCase()}`;
+  const promoCode = code.toUpperCase();
+  
+  const copyLandingLink = () => {
+    navigator.clipboard.writeText(landingUrl);
+    alert('Landing page link copied to clipboard!');
+  };
+  
+  const copyPromoCode = () => {
+    navigator.clipboard.writeText(promoCode);
+    alert('Promo code copied to clipboard!');
   };
 
   return (
@@ -360,23 +367,55 @@ const InfluencerDashboard = () => {
         <p className="subtitle">Your Baby Steps Partner Dashboard</p>
       </div>
 
-      {/* Share Link */}
+      {/* Share Section - Two Step Approach */}
       <div className="share-section">
-        <h3>Your Unique Share Link</h3>
-        <div className="share-box">
-          <input 
-            type="text" 
-            value={shareUrl} 
-            readOnly 
-            className="share-input"
-          />
-          <button onClick={copyShareLink} className="copy-button">
-            Copy Link
-          </button>
+        <h2>Your Partner Links & Code</h2>
+        
+        <div className="share-options">
+          {/* Landing Page Link */}
+          <div className="share-item">
+            <h3>🔗 Landing Page Link</h3>
+            <p className="share-description">
+              Perfect for posts & stories - showcases the full app with your special offer
+            </p>
+            <div className="share-box">
+              <input 
+                type="text" 
+                value={landingUrl} 
+                readOnly 
+                className="share-input"
+              />
+              <button onClick={copyLandingLink} className="copy-button">
+                <Copy size={16} />
+                Copy Link
+              </button>
+            </div>
+          </div>
+          
+          {/* Promo Code */}
+          <div className="share-item">
+            <h3>📋 Your Promo Code</h3>
+            <p className="share-description">
+              Give this code to followers for {influencerInfo?.free_months || 1} free month{influencerInfo?.free_months > 1 ? 's' : ''}
+            </p>
+            <div className="promo-code-display">
+              <span className="promo-code-text">{promoCode}</span>
+              <button onClick={copyPromoCode} className="copy-button">
+                <Copy size={16} />
+                Copy Code
+              </button>
+            </div>
+          </div>
         </div>
-        <p className="share-note">
-          Share this link with your followers. They'll get {influencerInfo?.free_months || 1} month{influencerInfo?.free_months > 1 ? 's' : ''} free!
-        </p>
+        
+        <div className="usage-tips">
+          <h4>💡 How to Use</h4>
+          <ul>
+            <li><strong>Share the link</strong> when showing the app features</li>
+            <li><strong>Mention the code</strong> when highlighting the free offer</li>
+            <li><strong>Both work together</strong> - link shows value, code claims offer</li>
+          </ul>
+        </div>
       </div>
 
       {/* Rest of the dashboard content remains the same... */}
@@ -384,11 +423,11 @@ const InfluencerDashboard = () => {
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon">
-            <Users size={24} />
+            <Eye size={24} />
           </div>
           <div className="metric-content">
-            <h3>{stats?.total_signups || 0}</h3>
-            <p>Total Signups</p>
+            <h3>{stats?.total_visits || 0}</h3>
+            <p>Link Visits</p>
           </div>
         </div>
 
@@ -434,17 +473,17 @@ const InfluencerDashboard = () => {
           <div className="chart-container">
             <div className="simple-chart">
               {weeklyData.map((week, idx) => {
-                const maxSignups = Math.max(...weeklyData.map(w => w.signups || 0));
-                const height = maxSignups > 0 ? (week.signups / maxSignups) * 100 : 0;
+                const maxVisits = Math.max(...weeklyData.map(w => w.visits || 0));
+                const height = maxVisits > 0 ? (week.visits / maxVisits) * 100 : 0;
                 
                 return (
                   <div key={idx} className="chart-bar-wrapper">
                     <div 
                       className="chart-bar"
                       style={{ height: `${height}%` }}
-                      title={`Week ${week.week_num}: ${week.signups} signups`}
+                      title={`Week ${week.week_num}: ${week.visits} visits`}
                     >
-                      <span className="bar-value">{week.signups}</span>
+                      <span className="bar-value">{week.visits}</span>
                     </div>
                     <span className="bar-label">W{week.week_num}</span>
                   </div>
@@ -488,7 +527,7 @@ const InfluencerDashboard = () => {
             </table>
           </div>
         ) : (
-          <p className="no-data">No signups yet. Share your link to get started!</p>
+          <p className="no-data">No visits yet. Share your link to get started!</p>
         )}
         
         <p className="privacy-note">

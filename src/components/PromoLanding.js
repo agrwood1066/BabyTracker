@@ -27,11 +27,29 @@ const PromoLanding = () => {
   useEffect(() => {
     if (promoCode) {
       validatePromoCode();
+      trackPromoVisit();
     } else {
       // No promo code, redirect to regular landing page
       navigate('/');
     }
   }, [promoCode]);
+
+  const trackPromoVisit = async () => {
+    try {
+      // Track the visit for analytics
+      await supabase
+        .from('promo_visits')
+        .insert({
+          promo_code: promoCode.toUpperCase(),
+          visited_at: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          referrer: document.referrer || null
+        });
+    } catch (error) {
+      console.log('Visit tracking failed:', error);
+      // Don't block the user experience for tracking failures
+    }
+  };
 
   const validatePromoCode = async () => {
     const { data, error } = await supabase
@@ -158,27 +176,70 @@ const PromoLanding = () => {
             </p>
           </div>
 
-          {/* Benefits */}
+          {/* App Features Showcase */}
+          <div className="features-showcase">
+            <h3>Everything You Need for Your Baby Journey</h3>
+            
+            <div className="features-grid">
+              <div className="feature-card">
+                <div className="feature-icon">🛒</div>
+                <h4>Smart Shopping Lists</h4>
+                <p>Organised shopping with budget tracking and mobile shopping mode</p>
+              </div>
+              
+              <div className="feature-card">
+                <div className="feature-icon">💰</div>
+                <h4>Budget Planner</h4>
+                <p>Track spending across categories with visual progress and insights</p>
+              </div>
+              
+              <div className="feature-card">
+                <div className="feature-icon">💕</div>
+                <h4>Baby Names</h4>
+                <p>Collaborate with your partner to find the perfect name</p>
+              </div>
+              
+              <div className="feature-card">
+                <div className="feature-icon">🏥</div>
+                <h4>Hospital Bag</h4>
+                <p>Never forget anything with our comprehensive checklist</p>
+              </div>
+              
+              <div className="feature-card">
+                <div className="feature-icon">🎁</div>
+                <h4>Gift Wishlist</h4>
+                <p>Shareable wishlists with automatic product images</p>
+              </div>
+              
+              <div className="feature-card">
+                <div className="feature-icon">👨‍👩‍👧‍👦</div>
+                <h4>Family Sharing</h4>
+                <p>Include your partner and family in the planning process</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Key Benefits */}
           <div className="benefits-list">
             <div className="benefit-item">
               <Check size={20} className="check-icon" />
-              <span>Complete pregnancy planner & tracker</span>
+              <span>Complete pregnancy planner in one app</span>
             </div>
             <div className="benefit-item">
               <Check size={20} className="check-icon" />
-              <span>Shopping lists with budget tracking</span>
+              <span>Budget tracking prevents overspending</span>
             </div>
             <div className="benefit-item">
               <Check size={20} className="check-icon" />
-              <span>Baby names voting with partner</span>
+              <span>Partner collaboration on all decisions</span>
             </div>
             <div className="benefit-item">
               <Check size={20} className="check-icon" />
-              <span>Hospital bag checklist</span>
+              <span>Export lists to PDF & Excel</span>
             </div>
             <div className="benefit-item">
               <Check size={20} className="check-icon" />
-              <span>Share with family members</span>
+              <span>Works perfectly on mobile & desktop</span>
             </div>
           </div>
 
@@ -223,9 +284,17 @@ const PromoLanding = () => {
 
           {/* Trust signals */}
           <div className="trust-signals">
-            <p>Loved by 1,000+ UK parents</p>
-            <div className="rating">
-              {'⭐'.repeat(5)} 4.9/5 rating
+            <div className="trust-item">
+              <span className="trust-number">1,000+</span>
+              <span className="trust-text">UK Parents Trust Us</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-rating">{'⭐'.repeat(5)}</span>
+              <span className="trust-text">4.9/5 Rating</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-number">£0</span>
+              <span className="trust-text">Payment Today</span>
             </div>
           </div>
         </div>
