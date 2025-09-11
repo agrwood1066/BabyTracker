@@ -1,32 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Baby, Gift, Star, Check, ChevronRight } from 'lucide-react';
 import './PromoLanding.css';
 
 const PromoLanding = () => {
-  const { code } = useParams(); // URL: /with/{ANY_PROMO_CODE} - Works with any code!
+  const { code } = useParams(); // URL: /with/{code}
+  const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [promoDetails, setPromoDetails] = useState(null);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [showSignUp, setShowSignUp] = useState(false);
+  
+  // Get promo code from URL params or query string
+  const getPromoCode = () => {
+    if (code) return code; // From /with/{code}
+    const params = new URLSearchParams(location.search);
+    return params.get('code'); // From /signup?code=CODE
+  };
+  
+  const promoCode = getPromoCode();
 
   useEffect(() => {
-    validatePromoCode();
-  }, [code]);
+    if (promoCode) {
+      validatePromoCode();
+    } else {
+      // No promo code, redirect to regular landing page
+      navigate('/');
+    }
+  }, [promoCode]);
 
   const validatePromoCode = async () => {
     const { data, error } = await supabase
       .from('promo_codes')
       .select('*')
-      .eq('code', code.toUpperCase())
+      .eq('code', promoCode.toUpperCase())
       .eq('active', true)
       .single();
 
     if (!data || error) {
       setError('Invalid or expired promo code');
-      setTimeout(() => navigate('/signup'), 3000);
+      setTimeout(() => navigate('/'), 3000);
       return;
     }
 
@@ -55,7 +72,7 @@ const PromoLanding = () => {
           password: Math.random().toString(36).slice(-12) + 'Aa1!', // Temp password they'll reset
           options: {
             data: {
-              promo_code: code.toUpperCase(),
+              promo_code: promoCode.toUpperCase(),
               full_name: '' // They'll complete profile later
             }
           }
@@ -71,7 +88,7 @@ const PromoLanding = () => {
       if (userId) {
         await supabase.from('promo_activations').upsert({
           user_id: userId,
-          promo_code: code.toUpperCase(),
+          promo_code: promoCode.toUpperCase(),
           status: 'pending',
           free_months: promoDetails.free_months
         });
@@ -80,7 +97,7 @@ const PromoLanding = () => {
         await supabase
           .from('profiles')
           .update({ 
-            promo_code_used: code.toUpperCase(),
+            promo_code_used: promoCode.toUpperCase(),
             stripe_promotion_code_id: promoDetails.stripe_promotion_code_id
           })
           .eq('id', userId);
@@ -88,11 +105,11 @@ const PromoLanding = () => {
 
       // Store email in session storage for webhook matching
       sessionStorage.setItem('promo_email', email.toLowerCase());
-      sessionStorage.setItem('promo_code', code.toUpperCase());
+      sessionStorage.setItem('promo_code', promoCode.toUpperCase());
 
       // Redirect to Stripe Payment Link with promo code
       // Using your actual Stripe monthly Payment Link (promo codes only work with monthly)
-      const stripeUrl = `https://buy.stripe.com/fZu4gzdiC2eE0Kx8opeME01?prefilled_email=${encodeURIComponent(email)}&prefilled_promo_code=${code.toUpperCase()}`;
+      const stripeUrl = `https://buy.stripe.com/fZu4gzdiC2eE0Kx8opeME01?prefilled_email=${encodeURIComponent(email)}&prefilled_promo_code=${promoCode.toUpperCase()}`;
       
       window.location.href = stripeUrl;
     } catch (error) {

@@ -80,7 +80,8 @@ function App() {
             <Route path="/subscription/activate" element={<SubscriptionActivation />} />
             <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="/influencer/:code" element={<InfluencerDashboard />} />
-            {/* <Route path="/with/:code" element={<PromoLanding />} /> */}
+            <Route path="/signup" element={<PromoLanding />} />
+            <Route path="/with/:code" element={<PromoLanding />} />
             <Route path="/influencer-signup" element={<InfluencerSignup />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
