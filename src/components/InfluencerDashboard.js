@@ -336,7 +336,7 @@ const InfluencerDashboard = () => {
 
   // Use production URL with fallback to localhost for development
   const baseUrl = 'https://www.babystepsplanner.com';
-  const landingUrl = `${baseUrl}/signup?code=${code.toUpperCase()}`;
+  const landingUrl = `${baseUrl}/?code=${code.toUpperCase()}`;
   const promoCode = code.toUpperCase();
   
   const copyLandingLink = () => {
