@@ -36,6 +36,18 @@ function Landing() {
   const [resetEmail, setResetEmail] = useState('');
   const [activeFeature, setActiveFeature] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  
+  // Check for promo code in URL on component mount
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      setPromoCode(code.toUpperCase());
+      // Auto-open sign-up modal if there's a promo code
+      setShowSignUp(true);
+    }
+  }, []);
   
   // Debug: Log any global errors
   React.useEffect(() => {
@@ -166,9 +178,32 @@ function Landing() {
 
     try {
       if (isSignUpForm) {
+        // Validate promo code if provided
+        let validPromoCode = null;
+        if (promoCode) {
+          const { data: promoData, error: promoError } = await supabase
+            .from('promo_codes')
+            .select('code')
+            .eq('code', promoCode.toUpperCase())
+            .eq('active', true)
+            .single();
+          
+          if (promoData && !promoError) {
+            validPromoCode = promoCode.toUpperCase();
+          } else {
+            // Don't block sign-up if promo code is invalid, just ignore it
+            console.log('Invalid or inactive promo code:', promoCode);
+          }
+        }
+
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: email,
           password: password,
+          options: {
+            data: {
+              promo_code_used: validPromoCode
+            }
+          }
         });
 
         if (signUpError) {
@@ -275,6 +310,10 @@ function Landing() {
     setResetEmail('');
     setMessage('');
     setError(''); // Clear error on modal close
+    // Don't clear promo code if it came from URL
+    if (!window.location.search.includes('code=')) {
+      setPromoCode('');
+    }
   };
 
   const scrollToFeature = (featureId) => {
@@ -760,6 +799,18 @@ function Landing() {
                 }}
                 onInput={(e) => e.target.setCustomValidity('')}
               />
+              <input
+                type="text"
+                placeholder="Promo Code (optional)"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                style={{ textTransform: 'uppercase' }}
+              />
+              {promoCode && (
+                <p className="promo-hint" style={{ fontSize: '0.9em', color: '#666', margin: '-10px 0 10px 0' }}>
+                  Great! We'll apply the {promoCode} promo code to your account.
+                </p>
+              )}
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating Account...' : 'Get Started'}
               </button>
