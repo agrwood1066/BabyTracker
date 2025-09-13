@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { handlePromoCodeAfterSignup } from '../utils/promoCodeHandler';
 import { 
   Baby, 
   ShoppingCart, 
@@ -178,43 +179,39 @@ function Landing() {
 
     try {
       if (isSignUpForm) {
-        // Validate promo code if provided
-        let validPromoCode = null;
-        if (promoCode) {
-          const { data: promoData, error: promoError } = await supabase
-            .from('promo_codes')
-            .select('code')
-            .eq('code', promoCode.toUpperCase())
-            .eq('active', true)
-            .single();
-          
-          if (promoData && !promoError) {
-            validPromoCode = promoCode.toUpperCase();
-          } else {
-            // Don't block sign-up if promo code is invalid, just ignore it
-            console.log('Invalid or inactive promo code:', promoCode);
-          }
-        }
-
+        // Simple sign up - just pass the email and password
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: email,
-          password: password,
-          options: {
-            data: {
-              promo_code_used: validPromoCode
-            }
-          }
+          password: password
         });
 
         if (signUpError) {
           console.error('Sign up error:', signUpError);
-          throw signUpError;
+          // More specific error messages
+          if (signUpError.message === 'Database error saving new user') {
+            setError('There was an issue creating your account. Please try again or contact support.');
+          } else if (signUpError.message.includes('already registered')) {
+            setError('This email is already registered. Please sign in instead.');
+          } else {
+            setError(signUpError.message || 'An error occurred during sign up');
+          }
+          setLoading(false);
+          return;
         }
 
         if (signUpData.user) {
-          setMessage('Account created successfully! Signing you in...');
+          setMessage('Account created successfully!');
+          
+          // Apply promo code if provided (after account creation)
+          if (promoCode) {
+            const promoResult = await handlePromoCodeAfterSignup(supabase, signUpData.user.id, promoCode);
+            if (promoResult.warning) {
+              console.log('Promo code warning:', promoResult.warning);
+            }
+          }
           
           // Try to sign in automatically after signup
+          setMessage('Signing you in...');
           setTimeout(async () => {
             try {
               const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
