@@ -179,39 +179,49 @@ function Landing() {
 
     try {
       if (isSignUpForm) {
-        // Simple sign up - just pass the email and password
+        // Absolutely simplest sign up - no extras
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: email,
+          email: email.trim().toLowerCase(),
           password: password
         });
 
         if (signUpError) {
-          console.error('Sign up error:', signUpError);
-          // More specific error messages
-          if (signUpError.message === 'Database error saving new user') {
-            setError('There was an issue creating your account. Please try again or contact support.');
-          } else if (signUpError.message.includes('already registered')) {
+          console.error('Sign up error details:', signUpError);
+          
+          // Handle specific error cases
+          if (signUpError.message.includes('already registered')) {
             setError('This email is already registered. Please sign in instead.');
+          } else if (signUpError.message.includes('Invalid email')) {
+            setError('Please enter a valid email address.');
+          } else if (signUpError.message.includes('Password')) {
+            setError('Password must be at least 6 characters.');
+          } else if (signUpError.message.includes('Database error')) {
+            setError('Account creation is temporarily unavailable. Please try again in a moment.');
           } else {
-            setError(signUpError.message || 'An error occurred during sign up');
+            setError(signUpError.message || 'Unable to create account. Please try again.');
           }
           setLoading(false);
           return;
         }
 
         if (signUpData.user) {
-          setMessage('Account created successfully!');
+          setMessage('Account created! Check your email to verify your account.');
           
-          // Apply promo code if provided (after account creation)
-          if (promoCode) {
-            const promoResult = await handlePromoCodeAfterSignup(supabase, signUpData.user.id, promoCode);
-            if (promoResult.warning) {
-              console.log('Promo code warning:', promoResult.warning);
+          // Store promo code separately if provided (don't let it break signup)
+          if (promoCode && signUpData.user.id) {
+            try {
+              // Try to save promo code, but don't fail if it doesn't work
+              await supabase
+                .from('profiles')
+                .update({ promo_code_used: promoCode.toUpperCase() })
+                .eq('id', signUpData.user.id);
+            } catch (promoError) {
+              console.log('Could not save promo code:', promoError);
+              // Don't show error to user - account was created successfully
             }
           }
           
-          // Try to sign in automatically after signup
-          setMessage('Signing you in...');
+          // Auto sign in after 2 seconds
           setTimeout(async () => {
             try {
               const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
