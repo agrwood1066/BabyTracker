@@ -31,3 +31,18 @@ yarn-error.log*
 
 # OS
 Thumbs.db
+
+# SQL files - exclude for security (schema structure)
+*.sql
+
+# Documentation - exclude build notes but keep essential docs
+*.md
+# But keep essential documentation
+!README.md
+!SECURITY.md
+
+# Shell scripts - deployment and setup scripts
+*.sh
+
+# Workspace files
+*.code-workspace
