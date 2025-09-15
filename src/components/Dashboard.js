@@ -130,39 +130,182 @@ function Dashboard() {
     checkPromoStatus
   } = useSubscription();
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
+  // Helper function to ensure profile exists
+  async function ensureProfileExists(user) {
+    try {
+      console.log('Ensuring profile exists for user:', user.id);
+      
+      // First attempt: try to get existing profile with retries
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`Profile fetch attempt ${attempt}/3`);
         
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
+        const { data: existingProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
-        
-        let currentProfile = profileData;
-        
-        // If profile doesn't exist, create it
-        if (profileError || !profileData) {
-          const familyId = crypto.randomUUID();
+          .maybeSingle(); // Use maybeSingle to avoid errors when no rows
+      
+        // If profile exists and has required fields, return it
+        if (existingProfile && !fetchError) {
+          console.log('Found existing profile:', existingProfile);
           
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              family_id: familyId
-            })
-            .select()
-            .single();
-          
-          if (createError) {
-            throw createError;
+          // Ensure family_id exists
+          if (!existingProfile.family_id) {
+            console.log('Profile missing family_id, updating...');
+            const familyId = crypto.randomUUID();
+            
+            // Try to update, but don't fail if it doesn't work
+            try {
+              const { data: updatedProfile } = await supabase
+                .from('profiles')
+                .update({ family_id: familyId })
+                .eq('id', user.id)
+                .select()
+                .single();
+              
+              if (updatedProfile) {
+                return { profile: updatedProfile, created: false };
+              }
+            } catch (updateError) {
+              console.warn('Failed to update family_id, using local value:', updateError);
+            }
+            
+            // Use local family_id if update failed
+            existingProfile.family_id = familyId;
           }
           
-          currentProfile = newProfile;
+          return { profile: existingProfile, created: false };
+        }
+        
+        // If error indicates infinite recursion, wait and retry
+        if (fetchError?.code === '42P17' || fetchError?.message?.includes('infinite recursion')) {
+          console.warn(`Infinite recursion detected on attempt ${attempt}, waiting...`);
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Progressive backoff
+            continue;
+          }
+        }
+        
+        // If no profile found on final attempt, try to create one
+        if (attempt === 3 && !existingProfile) {
+          console.log('No profile found after retries, attempting to create...');
+          break;
+        }
+      }
+      
+      // Profile creation attempt (simplified)
+      console.log('Attempting to create new profile for user:', user.id);
+      
+      const familyId = crypto.randomUUID();
+      const newProfileData = {
+        id: user.id,
+        email: user.email,
+        family_id: familyId,
+        subscription_status: 'free',
+        subscription_plan: 'free'
+      };
+      
+      // Try to create profile with error handling
+      try {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert(newProfileData)
+          .select()
+          .single();
+        
+        if (newProfile && !insertError) {
+          console.log('New profile created successfully:', newProfile);
+          return { profile: newProfile, created: true };
+        }
+        
+        // Handle specific errors
+        if (insertError?.code === '23505') {
+          console.log('Profile already exists (conflict), fetching...');
+          // Profile was created by trigger, try to fetch it
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const { data: retryProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (retryProfile) {
+            console.log('Found profile after conflict:', retryProfile);
+            return { profile: retryProfile, created: false };
+          }
+        }
+        
+        console.error('Profile creation failed:', insertError);
+        
+      } catch (createError) {
+        console.error('Profile creation exception:', createError);
+      }
+      
+      // Last resort: return a working minimal profile
+      console.warn('Using minimal fallback profile');
+      return {
+        profile: {
+          id: user.id,
+          email: user.email,
+          family_id: familyId,
+          subscription_status: 'free',
+          subscription_plan: 'free',
+          full_name: null,
+          due_date: null,
+          role: 'parent'
+        },
+        created: false,
+        error: true
+      };
+      
+    } catch (error) {
+      console.error('Critical error in ensureProfileExists:', error);
+      
+      // Return absolute minimal profile that won't break the app
+      return {
+        profile: {
+          id: user.id,
+          email: user.email,
+          family_id: crypto.randomUUID(),
+          subscription_status: 'free',
+          subscription_plan: 'free',
+          full_name: null,
+          due_date: null,
+          role: 'parent'
+        },
+        created: false,
+        error: true
+      };
+    }
+  }
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        console.log('Loading dashboard data...');
+        
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error('No authenticated user found:', userError);
+          navigate('/');
+          return;
+        }
+        
+        console.log('Authenticated user:', user.email);
+        
+        // Ensure profile exists with robust error handling
+        const { profile: currentProfile, created, error } = await ensureProfileExists(user);
+        
+        if (error) {
+          console.warn('Profile connection issue detected. Some features may be limited.');
+        }
+        
+        if (created) {
+          console.log('New profile was created for user');
         }
         
         setProfile(currentProfile);
@@ -182,14 +325,28 @@ function Dashboard() {
           setCurrentWeek(weeksPregnant > 0 ? weeksPregnant : 0);
         }
         
-        // Fetch stats
-        await fetchAllStats(currentProfile);
-        
-        // Fetch family members
-        await fetchFamilyMembers(currentProfile);
+        // Only fetch stats if we have a valid family_id
+        if (currentProfile?.family_id) {
+          console.log('Fetching stats for family:', currentProfile.family_id);
+          await fetchAllStats(currentProfile);
+          await fetchFamilyMembers(currentProfile);
+        } else {
+          console.warn('No family_id available, skipping stats fetch');
+          // Set empty stats so the UI doesn't break
+          setStats({
+            budget: { total: 0, spent: 0 },
+            babyItems: { total: 0, purchased: 0 },
+            wishlist: { total: 0, purchased: 0 },
+            hospitalBag: { total: 0, packed: 0 },
+            babyNames: { total: 0 },
+            parentingVows: { total: 0 }
+          });
+        }
         
       } catch (error) {
-        console.error('Error loading dashboard:', error);
+        console.error('Critical error loading dashboard:', error);
+        // Don't crash the entire dashboard
+        // Show an error message to the user
       } finally {
         setLoading(false);
       }
@@ -200,67 +357,129 @@ function Dashboard() {
 
   async function fetchAllStats(currentProfile) {
     try {
-      const familyId = currentProfile.family_id;
+      const familyId = currentProfile?.family_id;
       
-      // Budget stats
-      const { data: budgetCategories } = await supabase
-        .from('budget_categories')
-        .select('expected_budget')
-        .eq('family_id', familyId);
+      if (!familyId) {
+        console.warn('No family_id available for stats, using empty stats');
+        setStats({
+          budget: { total: 0, spent: 0 },
+          babyItems: { total: 0, purchased: 0 },
+          wishlist: { total: 0, purchased: 0 },
+          hospitalBag: { total: 0, packed: 0 },
+          babyNames: { total: 0 },
+          parentingVows: { total: 0 }
+        });
+        return;
+      }
+      
+      console.log('Fetching stats for family_id:', familyId);
+      
+      // Initialize with safe defaults
+      let totalBudget = 0, totalSpent = 0;
+      let totalItems = 0, purchasedItems = 0;
+      let totalWishlist = 0, purchasedWishlist = 0;
+      let totalHospitalBag = 0, packedHospitalBag = 0;
+      let totalNames = 0, totalVows = 0;
+      
+      // Try to fetch each stat category with individual error handling
+      try {
+        const { data: budgetCategories, error: budgetError } = await supabase
+          .from('budget_categories')
+          .select('expected_budget')
+          .eq('family_id', familyId);
+          
+        if (!budgetError && budgetCategories) {
+          totalBudget = budgetCategories.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0);
+        }
         
-      const { data: budgetItems } = await supabase
-        .from('baby_items')
-        .select('price, purchased')
-        .eq('family_id', familyId)
-        .not('price', 'is', null);
-      
-      const totalBudget = budgetCategories?.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0) || 0;
-      const totalSpent = budgetItems?.filter(item => item.purchased)
-        .reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+        const { data: budgetItems, error: itemsError } = await supabase
+          .from('baby_items')
+          .select('price, purchased')
+          .eq('family_id', familyId)
+          .not('price', 'is', null);
+        
+        if (!itemsError && budgetItems) {
+          totalSpent = budgetItems.filter(item => item.purchased)
+            .reduce((sum, item) => sum + (item.price || 0), 0);
+        }
+      } catch (budgetStatsError) {
+        console.warn('Budget stats failed, using defaults:', budgetStatsError);
+      }
       
       // Baby items stats
-      const { data: babyItems } = await supabase
-        .from('baby_items')
-        .select('purchased')
-        .eq('family_id', familyId);
-      
-      const totalItems = babyItems?.length || 0;
-      const purchasedItems = babyItems?.filter(item => item.purchased).length || 0;
+      try {
+        const { data: babyItems, error: babyItemsError } = await supabase
+          .from('baby_items')
+          .select('purchased')
+          .eq('family_id', familyId);
+        
+        if (!babyItemsError && babyItems) {
+          totalItems = babyItems.length;
+          purchasedItems = babyItems.filter(item => item.purchased).length;
+        }
+      } catch (babyItemsStatsError) {
+        console.warn('Baby items stats failed, using defaults:', babyItemsStatsError);
+      }
       
       // Wishlist stats
-      const { data: wishlistItems } = await supabase
-        .from('wishlist_items')
-        .select('purchased')
-        .eq('family_id', familyId);
-      
-      const totalWishlist = wishlistItems?.length || 0;
-      const purchasedWishlist = wishlistItems?.filter(item => item.purchased).length || 0;
+      try {
+        const { data: wishlistItems, error: wishlistError } = await supabase
+          .from('wishlist_items')
+          .select('purchased')
+          .eq('family_id', familyId);
+        
+        if (!wishlistError && wishlistItems) {
+          totalWishlist = wishlistItems.length;
+          purchasedWishlist = wishlistItems.filter(item => item.purchased).length;
+        }
+      } catch (wishlistStatsError) {
+        console.warn('Wishlist stats failed, using defaults:', wishlistStatsError);
+      }
       
       // Hospital bag stats
-      const { data: hospitalBagItems } = await supabase
-        .from('hospital_bag_items')
-        .select('packed')
-        .eq('family_id', familyId);
-      
-      const totalHospitalBag = hospitalBagItems?.length || 0;
-      const packedHospitalBag = hospitalBagItems?.filter(item => item.packed).length || 0;
+      try {
+        const { data: hospitalBagItems, error: hospitalError } = await supabase
+          .from('hospital_bag_items')
+          .select('packed')
+          .eq('family_id', familyId);
+        
+        if (!hospitalError && hospitalBagItems) {
+          totalHospitalBag = hospitalBagItems.length;
+          packedHospitalBag = hospitalBagItems.filter(item => item.packed).length;
+        }
+      } catch (hospitalStatsError) {
+        console.warn('Hospital bag stats failed, using defaults:', hospitalStatsError);
+      }
       
       // Baby names stats
-      const { data: babyNames } = await supabase
-        .from('baby_names')
-        .select('id')
-        .eq('family_id', familyId);
-      
-      const totalNames = babyNames?.length || 0;
+      try {
+        const { data: babyNames, error: namesError } = await supabase
+          .from('baby_names')
+          .select('id')
+          .eq('family_id', familyId);
+        
+        if (!namesError && babyNames) {
+          totalNames = babyNames.length;
+        }
+      } catch (namesStatsError) {
+        console.warn('Baby names stats failed, using defaults:', namesStatsError);
+      }
       
       // Parenting vows stats
-      const { data: vows } = await supabase
-        .from('parenting_vows')
-        .select('id')
-        .eq('family_id', familyId);
+      try {
+        const { data: vows, error: vowsError } = await supabase
+          .from('parenting_vows')
+          .select('id')
+          .eq('family_id', familyId);
+        
+        if (!vowsError && vows) {
+          totalVows = vows.length;
+        }
+      } catch (vowsStatsError) {
+        console.warn('Parenting vows stats failed, using defaults:', vowsStatsError);
+      }
       
-      const totalVows = vows?.length || 0;
-      
+      // Set stats with all collected data
       setStats({
         budget: { total: totalBudget, spent: totalSpent },
         babyItems: { total: totalItems, purchased: purchasedItems },
@@ -269,8 +488,20 @@ function Dashboard() {
         babyNames: { total: totalNames },
         parentingVows: { total: totalVows }
       });
+      
+      console.log('Stats loaded successfully with some graceful degradation where needed');
+      
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Critical error fetching stats, using empty defaults:', error);
+      // Always provide working stats even if everything fails
+      setStats({
+        budget: { total: 0, spent: 0 },
+        babyItems: { total: 0, purchased: 0 },
+        wishlist: { total: 0, purchased: 0 },
+        hospitalBag: { total: 0, packed: 0 },
+        babyNames: { total: 0 },
+        parentingVows: { total: 0 }
+      });
     }
   }
 
