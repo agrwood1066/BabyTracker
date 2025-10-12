@@ -25,6 +25,7 @@ import ResetPassword from './components/ResetPassword';
 import PromoLanding from './components/PromoLanding';
 import InfluencerSignup from './components/InfluencerSignup';
 import DebugAuth from './components/DebugAuth';
+import SharedWishlist from './components/SharedWishlist';
 
 // Legal Components (available to all users)
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
@@ -83,6 +84,7 @@ function App() {
             <Route path="/signup" element={<PromoLanding />} />
             <Route path="/with/:code" element={<PromoLanding />} />
             <Route path="/influencer-signup" element={<InfluencerSignup />} />
+            <Route path="/wishlist/:token" element={<SharedWishlist />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (

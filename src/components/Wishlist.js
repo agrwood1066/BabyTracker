@@ -316,23 +316,37 @@ function Wishlist() {
         .eq('id', user.id)
         .single();
 
-      const { data, error } = await supabase
+      // Check if a share link already exists
+      const { data: existingShare } = await supabase
         .from('wishlist_shares')
-        .insert({
-          family_id: profile.family_id,
-          created_by: user.id
-        })
         .select('share_token')
+        .eq('family_id', profile.family_id)
         .single();
 
-      if (error) throw error;
+      let shareToken;
+      if (existingShare) {
+        shareToken = existingShare.share_token;
+      } else {
+        // Create new share link
+        const { data: newShare, error } = await supabase
+          .from('wishlist_shares')
+          .insert({
+            family_id: profile.family_id,
+            created_by: user.id
+          })
+          .select('share_token')
+          .single();
 
-      const link = `${window.location.origin}/wishlist/${data.share_token}`;
+        if (error) throw error;
+        shareToken = newShare.share_token;
+      }
+
+      const link = `${window.location.origin}/wishlist/${shareToken}`;
       setShareLink(link);
       setShowShareModal(true);
     } catch (error) {
       console.error('Error generating share link:', error);
-      alert('Error generating share link');
+      alert('Error generating share link. Please try again.');
     }
   }
 
@@ -931,8 +945,8 @@ function Wishlist() {
               </button>
             </div>
             <p className="share-note">
-              Note: People with this link will need to create an account to mark items as purchased, 
-              but they won't be able to edit your list.
+              Anyone with this link can view your wishlist and mark items as purchased. 
+              They don't need to create an account! Only you can add or remove items.
             </p>
             <div className="modal-actions">
               <button className="close-button" onClick={() => setShowShareModal(false)}>
