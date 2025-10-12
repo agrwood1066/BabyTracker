@@ -53,3 +53,8 @@ status = 200
 from = "/influencer-signup"
 to = "/index.html"
 status = 200
+
+[[assets.redirects]]
+from = "/wishlist/*"
+to = "/index.html"
+status = 200
