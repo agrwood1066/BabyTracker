@@ -1,5 +1,7 @@
 name = "uptheduff"
 compatibility_date = "2025-06-04"
+workers_dev = false
 
-[assets]
-directory = "./build"
+[site]
+bucket = "./build"
+entry-point = "workers-site"
