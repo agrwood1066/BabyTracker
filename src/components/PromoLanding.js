@@ -36,15 +36,12 @@ const PromoLanding = () => {
 
   const trackPromoVisit = async () => {
     try {
-      // Track the visit for analytics
-      await supabase
-        .from('promo_visits')
-        .insert({
-          promo_code: promoCode.toUpperCase(),
-          visited_at: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-          referrer: document.referrer || null
-        });
+      // Track the visit using secure RPC function
+      await supabase.rpc('log_promo_visit', {
+        p_code: promoCode.toUpperCase(),
+        p_referrer: document.referrer || 'Direct'
+      });
+      console.log('Promo visit tracked:', promoCode);
     } catch (error) {
       console.log('Visit tracking failed:', error);
       // Don't block the user experience for tracking failures
@@ -52,14 +49,11 @@ const PromoLanding = () => {
   };
 
   const validatePromoCode = async () => {
+    // Use secure validation function
     const { data, error } = await supabase
-      .from('promo_codes')
-      .select('*')
-      .eq('code', promoCode.toUpperCase())
-      .eq('active', true)
-      .single();
+      .rpc('validate_promo_code', { p_code: promoCode.toUpperCase() });
 
-    if (!data || error) {
+    if (error || !data || !data.valid) {
       setError('Invalid or expired promo code');
       setTimeout(() => navigate('/'), 3000);
       return;

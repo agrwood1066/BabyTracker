@@ -177,6 +177,7 @@ const InfluencerDashboard = () => {
       } else {
         setStats(statsData[0] || {
           total_visits: 0,
+          total_signups: 0,
           active_trials: 0,
           paid_conversions: 0,
           conversion_rate: 0,

@@ -59,6 +59,17 @@ const PromoCodeInput = ({ onSuccess }) => {
           `Add payment details to start your trial.`
         );
         
+        // Track promo code usage
+        try {
+          await supabase.rpc('log_promo_visit', {
+            p_code: code.toUpperCase(),
+            p_referrer: 'Promo Code Input'
+          });
+        } catch (trackError) {
+          console.log('Visit tracking failed:', trackError);
+          // Don't block success for tracking failure
+        }
+        
         // Store promo details in session for later
         sessionStorage.setItem('pendingPromo', JSON.stringify({
           code: code.toUpperCase(),

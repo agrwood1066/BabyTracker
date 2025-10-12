@@ -143,30 +143,25 @@ function Profile() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Find all profiles and their family codes
-      const { data: allProfiles, error: searchError } = await supabase
-        .from('profiles')
-        .select('family_id, email')
-        .not('family_id', 'is', null);
-        
-      if (searchError) {
-        console.error('Search error:', searchError);
-        alert('Error searching for family. Please try again.');
+      // Use the NEW secure function that doesn't expose all user data
+      const { data, error } = await supabase
+        .rpc('find_family_by_code', { 
+          p_join_code: joinCode.toUpperCase() 
+        });
+
+      if (error) {
+        console.error('Error finding family:', error);
+        alert('Error finding family. Please try again.');
         return;
       }
-      
-      // Find matching family
-      const matchingProfile = allProfiles?.find(profile => {
-        if (!profile.family_id) return false;
-        const profileCode = profile.family_id.replace(/-/g, '').substring(0, 8).toUpperCase();
-        return profileCode === joinCode.toUpperCase();
-      });
-      
-      if (!matchingProfile) {
+
+      if (!data || data.length === 0) {
         alert('Invalid family code. Please check the code and try again.');
         return;
       }
 
+      const targetFamily = data[0];
+      
       // Check if user is already in this family
       const { data: currentProfile } = await supabase
         .from('profiles')
@@ -174,15 +169,22 @@ function Profile() {
         .eq('id', user.id)
         .single();
 
-      if (currentProfile?.family_id === matchingProfile.family_id) {
+      if (currentProfile?.family_id === targetFamily.family_id) {
         alert('You are already a member of this family!');
         return;
       }
 
-      // Update current user's family_id
+      // Show confirmation with family info
+      const confirmMessage = `Join ${targetFamily.family_name}?\n\nThis family has ${targetFamily.member_count} member(s).\n\nNote: You'll see their shared data, but your personal data stays with you.`;
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      // Update user's family_id
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ family_id: matchingProfile.family_id })
+        .update({ family_id: targetFamily.family_id })
         .eq('id', user.id);
 
       if (updateError) {
@@ -190,17 +192,17 @@ function Profile() {
         throw updateError;
       }
 
-      alert('🎉 Successfully joined the family!\n\nYou can now see and share data with your family members.');
+      alert('🎉 Successfully joined the family!\n\nRefreshing to show shared data...');
       setJoinCode('');
       
-      // Refresh to show updated family data
+      // Reload to show updated family data
       setTimeout(() => {
         window.location.reload();
       }, 1000);
       
     } catch (error) {
       console.error('Error joining family:', error);
-      alert('Error joining family: ' + error.message);
+      alert('Error joining family. Please try again.');
     }
   }
 
