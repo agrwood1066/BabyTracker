@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Gift, Check, ExternalLink, ArrowLeft, Users, Calendar } from 'lucide-react';
+import { Gift, Check, ExternalLink, ArrowLeft, Calendar } from 'lucide-react';
 import './SharedWishlist.css';
 
 function SharedWishlist() {
@@ -13,6 +13,7 @@ function SharedWishlist() {
   const [error, setError] = useState(null);
   const [purchaserName, setPurchaserName] = useState('');
   const [updatingItems, setUpdatingItems] = useState(new Set());
+  const [recentlyToggled, setRecentlyToggled] = useState(null);
 
   useEffect(() => {
     if (token) {
@@ -83,6 +84,18 @@ function SharedWishlist() {
       }
 
       if (data) {
+        // Show confirmation message
+        const wasPurchased = item.purchased;
+        setRecentlyToggled({
+          itemId: item.id,
+          action: wasPurchased ? 'unmarked' : 'marked'
+        });
+        
+        // Clear confirmation after 3 seconds
+        setTimeout(() => {
+          setRecentlyToggled(null);
+        }, 3000);
+        
         // Reload the wishlist to show updated status
         await loadSharedWishlist();
       } else {
@@ -138,52 +151,39 @@ function SharedWishlist() {
   return (
     <div className="shared-wishlist-container">
       <div className="shared-wishlist-header">
-        <div className="header-content">
-          <h1>
-            <Gift size={28} />
-            {familyName}'s Baby Wishlist
-          </h1>
+        <div className="banner-content">
+          <div className="icon-row">
+            <div className="icon-circle">
+              <Gift size={28} />
+            </div>
+          </div>
+          <h1>{familyName}'s Baby Wishlist</h1>
           <p className="wishlist-subtitle">
             Help them celebrate their new arrival! Click items you've purchased to let them know.
           </p>
-        </div>
-
-        <div className="wishlist-stats">
-          <div className="stat-card">
-            <Gift size={20} />
-            <div>
-              <div className="stat-value">{unpurchasedCount}</div>
-              <div className="stat-label">Still Needed</div>
+          
+          <div className="banner-bottom-row">
+            {/* Counter Widget */}
+            <div className="counter-widget">
+              <Gift size={32} className="counter-icon" />
+              <div className="counter-value">{unpurchasedCount}</div>
+              <div className="counter-label">Still Needed</div>
+            </div>
+            
+            {/* Name Input Widget */}
+            <div className="name-input-widget">
+              <label htmlFor="purchaser-name">Your Name (optional)</label>
+              <input
+                id="purchaser-name"
+                type="text"
+                value={purchaserName}
+                onChange={(e) => setPurchaserName(e.target.value)}
+                placeholder="e.g., Sarah"
+                className="purchaser-name-input"
+              />
+              <small>Helps them know who bought what!</small>
             </div>
           </div>
-          <div className="stat-card">
-            <Check size={20} />
-            <div>
-              <div className="stat-value">{purchasedCount}</div>
-              <div className="stat-label">Purchased</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <Users size={20} />
-            <div>
-              <div className="stat-value">{items.length}</div>
-              <div className="stat-label">Total Items</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Name input for purchasers */}
-        <div className="purchaser-name-section">
-          <label htmlFor="purchaser-name">Your Name (optional):</label>
-          <input
-            id="purchaser-name"
-            type="text"
-            value={purchaserName}
-            onChange={(e) => setPurchaserName(e.target.value)}
-            placeholder="e.g., Sarah"
-            className="purchaser-name-input"
-          />
-          <small>This helps the family know who purchased what!</small>
         </div>
       </div>
 
@@ -241,25 +241,36 @@ function SharedWishlist() {
                 </div>
 
                 {/* Purchase Button */}
-                <button 
-                  className={`purchase-toggle-btn ${item.purchased ? 'purchased' : 'available'}`}
-                  onClick={() => togglePurchased(item)}
-                  disabled={updatingItems.has(item.id)}
-                >
-                  {updatingItems.has(item.id) ? (
-                    <span>Updating...</span>
-                  ) : item.purchased ? (
-                    <>
-                      <Check size={16} />
-                      Mark as Available
-                    </>
-                  ) : (
-                    <>
-                      <Gift size={16} />
-                      I'll Get This!
-                    </>
+                <div className="purchase-button-container">
+                  {recentlyToggled?.itemId === item.id && (
+                    <div className={`toggle-confirmation ${recentlyToggled.action}`}>
+                      {recentlyToggled.action === 'marked' ? (
+                        <>✓ Marked as purchased!</>
+                      ) : (
+                        <>↺ Unmarked - available again</>
+                      )}
+                    </div>
                   )}
-                </button>
+                  <button 
+                    className={`purchase-toggle-btn ${item.purchased ? 'purchased' : 'available'}`}
+                    onClick={() => togglePurchased(item)}
+                    disabled={updatingItems.has(item.id)}
+                  >
+                    {updatingItems.has(item.id) ? (
+                      <span>Updating...</span>
+                    ) : item.purchased ? (
+                      <>
+                        <Check size={16} />
+                        Mark as Available
+                      </>
+                    ) : (
+                      <>
+                        <Gift size={16} />
+                        I'll Get This!
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           ))
@@ -304,8 +315,7 @@ function SharedWishlist() {
         <div className="footer-disclaimer">
           <p>
             <small>
-              This is a shared wishlist. Only the family can add or remove items. 
-              If you see any inappropriate content, please contact us.
+              This is a shared wishlist. These are only intended to be suggestions of items that we love, but please feel free to go "off list" xxx
             </small>
           </p>
         </div>

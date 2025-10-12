@@ -13,7 +13,7 @@
 
 .wishlist-header h1 {
   color: #333;
-  font-size: 1.5rem;
+  font-size: 28px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -23,8 +23,8 @@
 
 .wishlist-header h1 svg {
   color: #f5c2c7;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .header-actions {
@@ -669,19 +669,23 @@
 }
 
 .copy-button {
-  background-color: #b5d6f5;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .copy-button:hover {
-  background-color: #9cc6e8;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .share-note {
