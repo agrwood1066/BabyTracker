@@ -1,7 +1,7 @@
 name = "uptheduff"
 compatibility_date = "2025-06-04"
 workers_dev = false
-main = "workers-site/index.js"
 
 [site]
 bucket = "./build"
+entry-point = "workers-site"
