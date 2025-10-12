@@ -1,26 +1,41 @@
 import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
 
-addEventListener('fetch', event => {
-  event.respondWith(handleEvent(event))
-})
-
-async function handleEvent(event) {
-  try {
-    // Try to serve the asset
-    return await getAssetFromKV(event)
-  } catch (e) {
-    // If the asset is not found, serve index.html (SPA routing)
+export default {
+  async fetch(request, env, ctx) {
     try {
-      let notFoundResponse = await getAssetFromKV(event, {
-        mapRequestToAsset: req => new Request(`${new URL(req.url).origin}/index.html`, req),
-      })
-      
-      return new Response(notFoundResponse.body, {
-        ...notFoundResponse,
-        status: 200
-      })
+      // Try to serve the asset
+      return await getAssetFromKV(
+        {
+          request,
+          waitUntil: ctx.waitUntil.bind(ctx),
+        },
+        {
+          ASSET_NAMESPACE: env.__STATIC_CONTENT,
+          ASSET_MANIFEST: __STATIC_CONTENT_MANIFEST,
+        }
+      )
     } catch (e) {
-      return new Response(e.message || e.toString(), { status: 500 })
+      // If the asset is not found, serve index.html for SPA routing
+      try {
+        const notFoundResponse = await getAssetFromKV(
+          {
+            request: new Request(`${new URL(request.url).origin}/index.html`, request),
+            waitUntil: ctx.waitUntil.bind(ctx),
+          },
+          {
+            ASSET_NAMESPACE: env.__STATIC_CONTENT,
+            ASSET_MANIFEST: __STATIC_CONTENT_MANIFEST,
+          }
+        )
+        
+        return new Response(notFoundResponse.body, {
+          ...notFoundResponse,
+          status: 200,
+          headers: notFoundResponse.headers
+        })
+      } catch (e) {
+        return new Response(e.message || e.toString(), { status: 500 })
+      }
     }
   }
 }

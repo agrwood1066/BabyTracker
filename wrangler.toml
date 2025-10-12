@@ -1,7 +1,4 @@
 name = "uptheduff"
 compatibility_date = "2025-06-04"
-workers_dev = false
 
-[site]
-bucket = "./build"
-entry-point = "workers-site"
+pages_build_output_dir = "./build"
