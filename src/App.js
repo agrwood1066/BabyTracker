@@ -39,23 +39,96 @@ import BlogAdmin from './components/blog/BlogAdmin';
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileChecked, setProfileChecked] = useState(false);
+
+  // CRITICAL: Ensure profile exists whenever we have a session
+  const ensureProfileExists = async (user) => {
+    try {
+      console.log('🔍 App.js: Checking profile for user:', user.email);
+      
+      // Check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id, email, family_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (existingProfile && !checkError) {
+        console.log('✓ App.js: Profile exists');
+        return true;
+      }
+
+      // Profile doesn't exist, create it
+      console.log('⚠️ App.js: Profile missing, creating...');
+      
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: user.id,
+            email: user.email,
+            subscription_status: 'trial',
+            subscription_plan: 'free',
+            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (newProfile && !insertError) {
+        console.log('✓ App.js: Profile created successfully');
+        return true;
+      }
+
+      // If we got a conflict error (23505), profile was created by trigger
+      if (insertError?.code === '23505') {
+        console.log('✓ App.js: Profile already exists (created by trigger)');
+        return true;
+      }
+
+      console.error('❌ App.js: Failed to create profile:', insertError);
+      return false;
+      
+    } catch (error) {
+      console.error('❌ App.js: Error in ensureProfileExists:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+      
+      // If we have a session, ensure profile exists
+      if (session?.user) {
+        await ensureProfileExists(session.user);
+        setProfileChecked(true);
+      }
+      
       setLoading(false);
     });
 
+    // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('🔄 Auth state changed:', _event);
+      
       setSession(session);
+      
+      // If user just signed in or signed up, ensure profile exists
+      if (session?.user && (_event === 'SIGNED_IN' || _event === 'USER_UPDATED')) {
+        console.log('🔄 Auth event triggered, ensuring profile exists...');
+        await ensureProfileExists(session.user);
+        setProfileChecked(true);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
+  if (loading || (session && !profileChecked)) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
