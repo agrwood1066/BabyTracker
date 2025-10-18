@@ -1,41 +1,110 @@
--- DIAGNOSTIC: Check what's wrong with profile creation
--- Run each section separately in Supabase SQL editor to identify the issue
+-- COMPREHENSIVE DIAGNOSTIC SCRIPT
+-- Run this in Supabase SQL Editor to diagnose the signup profile creation issue
+-- For user: input_chain.2n@icloud.com
 
--- 1. Check if the profiles table exists and its structure
+-- ============================================
+-- PART 1: Check if the trigger exists
+-- ============================================
 SELECT 
-    column_name, 
-    data_type, 
-    is_nullable,
-    column_default
-FROM information_schema.columns
-WHERE table_schema = 'public' 
-AND table_name = 'profiles'
-ORDER BY ordinal_position;
+    'TRIGGER CHECK' as check_type,
+    tgname as trigger_name, 
+    tgisinternal as is_internal,
+    tgenabled as enabled,
+    pg_get_triggerdef(oid) as trigger_definition
+FROM pg_trigger 
+WHERE tgname = 'on_auth_user_created'
+AND tgrelid = 'auth.users'::regclass;
 
--- 2. Check if the trigger exists
+-- ============================================
+-- PART 2: Check if the function exists and get its definition
+-- ============================================
 SELECT 
-    trigger_name,
-    event_manipulation,
-    event_object_table,
-    action_statement
-FROM information_schema.triggers
-WHERE trigger_schema = 'auth'
-AND event_object_table = 'users';
+    'FUNCTION CHECK' as check_type,
+    proname as function_name,
+    prosrc as function_body
+FROM pg_proc 
+WHERE proname = 'handle_new_user';
 
--- 3. Check if the handle_new_user function exists
+-- ============================================
+-- PART 3: Check the new user in auth.users
+-- ============================================
 SELECT 
-    routine_name,
-    routine_definition
-FROM information_schema.routines
-WHERE routine_schema = 'public'
-AND routine_name = 'handle_new_user';
+    'NEW USER AUTH CHECK' as check_type,
+    id,
+    email,
+    created_at,
+    email_confirmed_at,
+    raw_user_meta_data,
+    raw_app_meta_data
+FROM auth.users
+WHERE email = 'input_chain.2n@icloud.com';
 
--- 4. Test creating a profile manually (replace with a test UUID)
--- INSERT INTO public.profiles (id, email) 
--- VALUES ('00000000-0000-0000-0000-000000000001', 'test@example.com');
-
--- 5. Check Row Level Security policies
+-- ============================================
+-- PART 4: Check if profile was created
+-- ============================================
 SELECT 
+    'PROFILE CHECK' as check_type,
+    p.*
+FROM profiles p
+JOIN auth.users u ON p.id = u.id
+WHERE u.email = 'input_chain.2n@icloud.com';
+
+-- If no profile, show count
+SELECT 
+    'PROFILE MISSING?' as check_type,
+    COUNT(*) as profiles_found
+FROM profiles p
+JOIN auth.users u ON p.id = u.id
+WHERE u.email = 'input_chain.2n@icloud.com';
+
+-- ============================================
+-- PART 5: Check promo code tables
+-- ============================================
+-- Check if promo code was used/logged
+SELECT 
+    'PROMO CODE USAGE' as check_type,
+    pcu.*
+FROM promo_code_usage pcu
+JOIN auth.users u ON pcu.user_id = u.id
+WHERE u.email = 'input_chain.2n@icloud.com';
+
+-- Check promo activations
+SELECT 
+    'PROMO ACTIVATION' as check_type,
+    pa.*
+FROM promo_activations pa
+JOIN auth.users u ON pa.user_id = u.id
+WHERE u.email = 'input_chain.2n@icloud.com';
+
+-- ============================================
+-- PART 6: Check for other recent signups that might have failed
+-- ============================================
+SELECT 
+    'RECENT USERS WITHOUT PROFILES' as check_type,
+    u.id,
+    u.email,
+    u.created_at,
+    u.raw_user_meta_data->>'promo_code_used' as promo_code
+FROM auth.users u
+LEFT JOIN profiles p ON u.id = p.id
+WHERE p.id IS NULL
+AND u.created_at > NOW() - INTERVAL '7 days'
+ORDER BY u.created_at DESC;
+
+-- ============================================
+-- PART 7: Count total users vs profiles
+-- ============================================
+SELECT 
+    'USER VS PROFILE COUNT' as check_type,
+    (SELECT COUNT(*) FROM auth.users) as total_users,
+    (SELECT COUNT(*) FROM profiles) as total_profiles,
+    (SELECT COUNT(*) FROM auth.users u LEFT JOIN profiles p ON u.id = p.id WHERE p.id IS NULL) as users_without_profiles;
+
+-- ============================================
+-- PART 8: Check RLS policies on profiles
+-- ============================================
+SELECT 
+    'RLS POLICIES' as check_type,
     schemaname,
     tablename,
     policyname,
@@ -47,23 +116,44 @@ SELECT
 FROM pg_policies
 WHERE tablename = 'profiles';
 
--- 6. Check if there are any foreign key constraints causing issues
-SELECT
-    tc.constraint_name, 
-    tc.table_name, 
-    kcu.column_name, 
-    ccu.table_name AS foreign_table_name,
-    ccu.column_name AS foreign_column_name 
-FROM 
-    information_schema.table_constraints AS tc 
-    JOIN information_schema.key_column_usage AS kcu
-      ON tc.constraint_name = kcu.constraint_name
-      AND tc.table_schema = kcu.table_schema
-    JOIN information_schema.constraint_column_usage AS ccu
-      ON ccu.constraint_name = tc.constraint_name
-      AND ccu.table_schema = tc.table_schema
-WHERE tc.constraint_type = 'FOREIGN KEY' 
-AND tc.table_name='profiles';
+-- ============================================
+-- PART 9: Test if we can manually create the profile
+-- ============================================
+-- This will try to create the profile manually to see if there are any constraint issues
+DO $$
+DECLARE
+    v_user_id UUID;
+    v_user_email TEXT;
+BEGIN
+    -- Get the user ID
+    SELECT id, email INTO v_user_id, v_user_email
+    FROM auth.users
+    WHERE email = 'input_chain.2n@icloud.com';
+    
+    IF v_user_id IS NOT NULL THEN
+        -- Try to create profile
+        BEGIN
+            INSERT INTO profiles (id, email, family_id)
+            VALUES (v_user_id, v_user_email, uuid_generate_v4())
+            ON CONFLICT (id) DO NOTHING;
+            
+            RAISE NOTICE 'Profile created successfully for user: %', v_user_email;
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Error creating profile: %', SQLERRM;
+        END;
+    ELSE
+        RAISE NOTICE 'User not found';
+    END IF;
+END $$;
 
--- 7. Check recent errors in Postgres logs (if you have access)
--- This might show in Supabase dashboard under Logs
+-- ============================================
+-- PART 10: Check if there are any database logs/errors
+-- ============================================
+-- Note: You may need to check Supabase dashboard logs for this
+SELECT 
+    'DIAGNOSTIC COMPLETE' as status,
+    'Check results above for issues. Look for:' as instructions,
+    '1. Missing trigger or function' as check_1,
+    '2. User exists but no profile' as check_2,
+    '3. RLS policy issues' as check_3,
+    '4. Promo code not logged' as check_4;

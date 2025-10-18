@@ -62,6 +62,49 @@ const PromoLanding = () => {
     setPromoDetails(data);
   };
 
+  // Helper function to ensure profile exists (CRITICAL FALLBACK)
+  const ensureProfileExists = async (userId, userEmail) => {
+    try {
+      // Check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (existingProfile) {
+        console.log('✓ Profile already exists');
+        return true;
+      }
+
+      // Profile doesn't exist, create it manually
+      console.log('⚠️ Profile missing, creating manually...');
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            email: userEmail,
+            subscription_status: 'trial',
+            subscription_plan: 'free',
+            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            promo_code_used: promoCode.toUpperCase()
+          }
+        ]);
+
+      if (insertError) {
+        console.error('❌ Error creating profile:', insertError);
+        return false;
+      }
+
+      console.log('✓ Profile created successfully via fallback');
+      return true;
+    } catch (error) {
+      console.error('❌ Error in ensureProfileExists:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -78,13 +121,13 @@ const PromoLanding = () => {
       let userId;
 
       if (!existingUser) {
-        // Create new auth user
+        // Create new auth user with promo code in metadata
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: email.toLowerCase(),
           password: Math.random().toString(36).slice(-12) + 'Aa1!', // Temp password they'll reset
           options: {
             data: {
-              promo_code: promoCode.toUpperCase(),
+              promo_code_used: promoCode.toUpperCase(),
               full_name: '' // They'll complete profile later
             }
           }
@@ -92,6 +135,14 @@ const PromoLanding = () => {
 
         if (authError) throw authError;
         userId = authData.user?.id;
+
+        // CRITICAL: Ensure profile exists (fallback if trigger failed)
+        if (userId) {
+          const profileCreated = await ensureProfileExists(userId, email.toLowerCase());
+          if (!profileCreated) {
+            console.warn('⚠️ Profile creation failed, but continuing...');
+          }
+        }
       } else {
         userId = existingUser.id;
       }
@@ -105,7 +156,7 @@ const PromoLanding = () => {
           free_months: promoDetails.free_months
         });
 
-        // Update profile with promo code
+        // Update profile with promo code (in case it already existed)
         await supabase
           .from('profiles')
           .update({ 

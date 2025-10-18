@@ -32,7 +32,7 @@ function Login() {
     }
   }, []);
 
-  // Helper function to ensure profile exists (CRITICAL FALLBACK)
+  // Helper function to ensure profile exists
   const ensureProfileExists = async (userId, userEmail) => {
     try {
       // Check if profile exists
@@ -43,12 +43,12 @@ function Login() {
         .single();
 
       if (existingProfile) {
-        console.log('✓ Profile already exists');
+        console.log('Profile already exists');
         return true;
       }
 
       // Profile doesn't exist, create it manually
-      console.log('⚠️ Profile missing, creating manually...');
+      console.log('Profile missing, creating manually...');
       const { error: insertError } = await supabase
         .from('profiles')
         .insert([
@@ -62,14 +62,14 @@ function Login() {
         ]);
 
       if (insertError) {
-        console.error('❌ Error creating profile:', insertError);
+        console.error('Error creating profile:', insertError);
         return false;
       }
 
-      console.log('✓ Profile created successfully via fallback');
+      console.log('Profile created successfully');
       return true;
     } catch (error) {
-      console.error('❌ Error in ensureProfileExists:', error);
+      console.error('Error in ensureProfileExists:', error);
       return false;
     }
   };
@@ -87,7 +87,7 @@ function Login() {
           password: password,
         };
 
-        // Add promo code to metadata if provided (for trigger to use)
+        // Add promo code to metadata if provided
         if (promoCode) {
           signUpOptions.options = {
             data: {
@@ -103,15 +103,11 @@ function Login() {
           throw signUpError;
         }
 
-        console.log('✓ SignUp successful');
+        console.log('SignUp successful');
 
         if (signUpData.user) {
           // CRITICAL: Ensure profile exists (fallback if trigger failed)
-          const profileCreated = await ensureProfileExists(signUpData.user.id, signUpData.user.email);
-          
-          if (!profileCreated) {
-            console.warn('⚠️ Profile creation failed, but continuing...');
-          }
+          await ensureProfileExists(signUpData.user.id, signUpData.user.email);
 
           // Apply promo code if provided
           if (promoCode) {
@@ -125,10 +121,8 @@ function Login() {
                 console.warn('Promo code application failed:', error);
                 setPromoMessage(`⚠️ Promo code could not be applied: ${error.message}`);
               } else if (data && data.success) {
-                console.log('✓ Promo code applied:', data);
                 setPromoMessage(`✅ ${data.message || 'Promo code applied successfully'}`);
               } else if (data && !data.success) {
-                console.warn('Promo code rejected:', data);
                 setPromoMessage(`⚠️ ${data.error || 'Promo code could not be applied'}`);
               }
             } catch (promoError) {
@@ -181,7 +175,7 @@ function Login() {
           throw error;
         }
 
-        console.log('✓ SignIn successful');
+        console.log('SignIn successful');
         
         if (data.user) {
           // Ensure profile exists even on login (safety check)
