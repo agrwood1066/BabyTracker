@@ -52,6 +52,15 @@ function AuthCallback() {
 
             if (data.session) {
               console.log('✓ Email verified! Session established for:', data.session.user.email);
+              
+              // Ensure profile exists (in case trigger didn't fire)
+              try {
+                const { data: profileCheck } = await supabase.rpc('ensure_profile_exists');
+                console.log('✓ Profile verified:', profileCheck);
+              } catch (err) {
+                console.error('Profile check failed:', err);
+              }
+              
               setStatus('success');
               
               // Small delay to show success message, then redirect

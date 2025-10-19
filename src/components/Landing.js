@@ -26,6 +26,22 @@ import {
 import './Landing.css';
 
 function Landing() {
+  // Helper function to ensure profile exists
+  const ensureProfileExists = async () => {
+    try {
+      const { data, error } = await supabase.rpc('ensure_profile_exists');
+      if (error) {
+        console.error('Profile creation error:', error);
+        return false;
+      }
+      console.log('✓ Profile ensured:', data);
+      return data.success;
+    } catch (err) {
+      console.error('Failed to ensure profile:', err);
+      return false;
+    }
+  };
+
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -206,6 +222,9 @@ function Landing() {
 
         if (signUpData.user) {
           setMessage('Account created! Check your email to verify your account.');
+          
+          // Ensure profile is created (fallback if trigger didn't work)
+          await ensureProfileExists();
           
           // Store promo code separately if provided (don't let it break signup)
           if (promoCode && signUpData.user.id) {
