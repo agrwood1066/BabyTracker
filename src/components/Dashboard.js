@@ -281,13 +281,18 @@ function Dashboard() {
   }
 
   useEffect(() => {
+    let mounted = true;
+    
     async function loadDashboardData() {
       try {
+        if (!mounted) return;
         setLoading(true);
         console.log('Loading dashboard data...');
         
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (!mounted) return;
         
         if (userError || !user) {
           console.error('No authenticated user found:', userError);
@@ -297,15 +302,28 @@ function Dashboard() {
         
         console.log('Authenticated user:', user.email);
         
-        // Ensure profile exists with robust error handling
-        const { profile: currentProfile, created, error } = await ensureProfileExists(user);
+        // Simplified profile check - just try once
+        const { data: currentProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
         
-        if (error) {
-          console.warn('Profile connection issue detected. Some features may be limited.');
-        }
+        if (!mounted) return;
         
-        if (created) {
-          console.log('New profile was created for user');
+        if (profileError || !currentProfile) {
+          console.error('Profile not found:', profileError);
+          // Use minimal fallback profile
+          const fallbackProfile = {
+            id: user.id,
+            email: user.email,
+            family_id: crypto.randomUUID(),
+            subscription_status: 'free',
+            subscription_plan: 'free'
+          };
+          setProfile(fallbackProfile);
+          setLoading(false);
+          return;
         }
         
         setProfile(currentProfile);
@@ -328,11 +346,13 @@ function Dashboard() {
         // Only fetch stats if we have a valid family_id
         if (currentProfile?.family_id) {
           console.log('Fetching stats for family:', currentProfile.family_id);
-          await fetchAllStats(currentProfile);
-          await fetchFamilyMembers(currentProfile);
+          // Fetch all stats and family members in parallel
+          await Promise.all([
+            fetchAllStatsOptimized(currentProfile),
+            fetchFamilyMembers(currentProfile)
+          ]);
         } else {
-          console.warn('No family_id available, skipping stats fetch');
-          // Set empty stats so the UI doesn't break
+          console.warn('No family_id available, using empty stats');
           setStats({
             budget: { total: 0, spent: 0 },
             babyItems: { total: 0, purchased: 0 },
@@ -345,15 +365,29 @@ function Dashboard() {
         
       } catch (error) {
         console.error('Critical error loading dashboard:', error);
-        // Don't crash the entire dashboard
-        // Show an error message to the user
+        // Ensure we set empty stats so UI doesn't break
+        setStats({
+          budget: { total: 0, spent: 0 },
+          babyItems: { total: 0, purchased: 0 },
+          wishlist: { total: 0, purchased: 0 },
+          hospitalBag: { total: 0, packed: 0 },
+          babyNames: { total: 0 },
+          parentingVows: { total: 0 }
+        });
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
     
     loadDashboardData();
-  }, []);
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array - only run once
 
   async function fetchAllStats(currentProfile) {
     try {
@@ -523,6 +557,114 @@ function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching family members:', error);
+    }
+  }
+
+  // Optimized stats fetching - all queries run in parallel
+  async function fetchAllStatsOptimized(currentProfile) {
+    try {
+      const familyId = currentProfile?.family_id;
+      
+      if (!familyId) {
+        console.warn('No family_id for stats');
+        setStats({
+          budget: { total: 0, spent: 0 },
+          babyItems: { total: 0, purchased: 0 },
+          wishlist: { total: 0, purchased: 0 },
+          hospitalBag: { total: 0, packed: 0 },
+          babyNames: { total: 0 },
+          parentingVows: { total: 0 }
+        });
+        return;
+      }
+      
+      console.log('Fetching all stats in parallel for family:', familyId);
+      
+      // Fetch all data in parallel for maximum speed
+      const [
+        budgetCategoriesResult,
+        budgetItemsResult,
+        babyItemsResult,
+        wishlistResult,
+        hospitalBagResult,
+        babyNamesResult,
+        vowsResult
+      ] = await Promise.allSettled([
+        supabase.from('budget_categories').select('expected_budget').eq('family_id', familyId),
+        supabase.from('baby_items').select('price, purchased').eq('family_id', familyId).not('price', 'is', null),
+        supabase.from('baby_items').select('purchased').eq('family_id', familyId),
+        supabase.from('wishlist_items').select('purchased').eq('family_id', familyId),
+        supabase.from('hospital_bag_items').select('packed').eq('family_id', familyId),
+        supabase.from('baby_names').select('id').eq('family_id', familyId),
+        supabase.from('parenting_vows').select('id').eq('family_id', familyId)
+      ]);
+      
+      // Process budget data
+      let totalBudget = 0, totalSpent = 0;
+      if (budgetCategoriesResult.status === 'fulfilled' && budgetCategoriesResult.value?.data) {
+        totalBudget = budgetCategoriesResult.value.data.reduce((sum, cat) => sum + (cat.expected_budget || 0), 0);
+      }
+      if (budgetItemsResult.status === 'fulfilled' && budgetItemsResult.value?.data) {
+        totalSpent = budgetItemsResult.value.data
+          .filter(item => item.purchased)
+          .reduce((sum, item) => sum + (item.price || 0), 0);
+      }
+      
+      // Process baby items
+      let totalItems = 0, purchasedItems = 0;
+      if (babyItemsResult.status === 'fulfilled' && babyItemsResult.value?.data) {
+        totalItems = babyItemsResult.value.data.length;
+        purchasedItems = babyItemsResult.value.data.filter(item => item.purchased).length;
+      }
+      
+      // Process wishlist
+      let totalWishlist = 0, purchasedWishlist = 0;
+      if (wishlistResult.status === 'fulfilled' && wishlistResult.value?.data) {
+        totalWishlist = wishlistResult.value.data.length;
+        purchasedWishlist = wishlistResult.value.data.filter(item => item.purchased).length;
+      }
+      
+      // Process hospital bag
+      let totalHospitalBag = 0, packedHospitalBag = 0;
+      if (hospitalBagResult.status === 'fulfilled' && hospitalBagResult.value?.data) {
+        totalHospitalBag = hospitalBagResult.value.data.length;
+        packedHospitalBag = hospitalBagResult.value.data.filter(item => item.packed).length;
+      }
+      
+      // Process baby names
+      let totalNames = 0;
+      if (babyNamesResult.status === 'fulfilled' && babyNamesResult.value?.data) {
+        totalNames = babyNamesResult.value.data.length;
+      }
+      
+      // Process parenting vows
+      let totalVows = 0;
+      if (vowsResult.status === 'fulfilled' && vowsResult.value?.data) {
+        totalVows = vowsResult.value.data.length;
+      }
+      
+      // Set all stats at once
+      setStats({
+        budget: { total: totalBudget, spent: totalSpent },
+        babyItems: { total: totalItems, purchased: purchasedItems },
+        wishlist: { total: totalWishlist, purchased: purchasedWishlist },
+        hospitalBag: { total: totalHospitalBag, packed: packedHospitalBag },
+        babyNames: { total: totalNames },
+        parentingVows: { total: totalVows }
+      });
+      
+      console.log('All stats loaded successfully in parallel');
+      
+    } catch (error) {
+      console.error('Error in optimized stats fetch:', error);
+      setStats({
+        budget: { total: 0, spent: 0 },
+        babyItems: { total: 0, purchased: 0 },
+        wishlist: { total: 0, purchased: 0 },
+        hospitalBag: { total: 0, packed: 0 },
+        babyNames: { total: 0 },
+        parentingVows: { total: 0 }
+      });
     }
   }
 
